@@ -2,7 +2,11 @@
 """
 Created on Fri Nov 11 15:48:45 2022
 
-@author: valla
+@author: valla, @adapted by: elamrani
+
+Contains:
+1) Definition of single agents;
+2) Action/reward functions (e.g. masks).
 """
 
 import numpy as np
@@ -11,6 +15,9 @@ import abc
 import wandb
 import pickle
 import os
+from discrete_blocks import discrete_block as Block
+
+
 class SupervisorRelative(metaclass=abc.ABCMeta):
     def __init__(self, n_robots, block_choices,config,log_freq=None,use_wandb=False,env='rot'):
         super().__init__()
@@ -83,6 +90,7 @@ class SupervisorRelative(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def choose_action(self,state):
         pass
+
 
 class SupervisorRelativeSparse(SupervisorRelative):
     def __init__(self,
@@ -220,7 +228,8 @@ class SupervisorRelativeSparse(SupervisorRelative):
                 return generate_mask_dense(state, rid, self.n_side,self.last_only,self.max_blocks,self.n_robots,self.action_choice)
             else:
                 return generate_mask_always_hold(state, rid, self.n_side_oriented,self.last_only,self.max_blocks,self.n_robots,self.action_choice)
-            
+
+
 class A2CSupervisorDense(SupervisorRelative):
     def __init__(self,
                  n_robots,
@@ -302,7 +311,8 @@ class A2CSupervisorDense(SupervisorRelative):
         
     def generate_mask(self,state,rid):
         return generate_mask_dense(state, rid, self.n_side,self.last_only,self.max_blocks,self.n_robots)
-    
+
+
 class SACSupervisorDense(SupervisorRelative):
     def __init__(self,
                  n_robots,
@@ -403,7 +413,8 @@ class SACSupervisorDense(SupervisorRelative):
             return generate_mask_dense(state, rid, self.n_side,self.last_only,self.max_blocks,self.n_robots,self.action_choice)
         else:
             return generate_mask_always_hold(state, rid, self.n_side,self.last_only,self.max_blocks,self.n_robots,self.action_choice, )
-        
+
+
 class SACSupervisorSparse(SupervisorRelativeSparse):
     def __init__(self,
                  n_robots,
@@ -452,7 +463,8 @@ class SACSupervisorSparse(SupervisorRelativeSparse):
                                               self.n_actions,
                                               self.model,
                                               config)
-        
+
+
 class A2CSupervisor(SupervisorRelativeSparse):
     def __init__(self,
                  n_robots,
@@ -525,7 +537,8 @@ class A2CSupervisor(SupervisorRelativeSparse):
         else:
             action,action_params = int2act_sup(actionid,self.n_side,self.last_only,state.graph.n_blocks,self.max_blocks,self.action_choice)
         return action,action_params,actionid,actions_dist.entropy()
-    
+
+
 def int2act_norot(action_id,n_block,n_robots, n_side_b,n_side_sup,last_only,max_blocks,action_choices,n_reg):
     if last_only:
         rid, btype_sup, btype, side_sup, side_b,side_ori =np.unravel_index(action_id,
@@ -1039,7 +1052,7 @@ if __name__ == '__main__':
             'opt_Q_reduction': 'min',
             'V_optimistic':False,
             }
-    from discrete_blocks_norot import discret_block_norot as Block
+    
     hexagone = Block([[0,1,1],[1,0,0],[1,1,1],[1,1,0],[0,2,1],[0,1,0]],muc=0.7)
     triangleUp = Block([[0,0,0]])
     triangleDown = Block([[0,0,1]])
