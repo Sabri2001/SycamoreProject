@@ -96,12 +96,12 @@ if __name__ == "__main__":
     # gym.sim.ph_mod.set_max_forces(1,Fx=[-f,f],Fy=[-f,f])
     alterations=None
     #alterations=np.array([[0,0]])
-    rewards, anim = gym.exploit(gap=4, alterations=alterations, n_alter=2, h=6, draw_robots=True, auto_leave=True)
+    rewards, anim = gym.exploit(gap=2, alterations=alterations, n_alter=2, h=6, draw_robots=True, auto_leave=True)
         # gap: size of the fixed gap to be tested
     print("Rewards:")
     print(rewards)
-    gr.save_anim(anim,"exploit",ext='html')
-    gr.save_anim(anim,"exploit",ext='gif')
+    gr.save_anim(anim,"exploit_gap2",ext='html')
+    gr.save_anim(anim,"exploit_gap2",ext='gif')
     #name = 'struct8_a2'
     #plt.savefig(f'../graphics/results/experiment 3/{name}.pdf')
     #plt.savefig(f'../graphics/results/experiment 3/{name}.png')

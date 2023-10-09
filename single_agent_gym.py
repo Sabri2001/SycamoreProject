@@ -14,18 +14,22 @@ import wandb
 import numpy as np
 import pickle
 from discrete_blocks import discrete_block as Block
-from relative_single_agent import SACSupervisorSparse,generous_reward,punitive_reward,modular_reward,A2CSupervisor
+from relative_single_agent import SACSupervisorSparse,generous_reward,punitive_reward,modular_reward
 from discrete_simulator import DiscreteSimulator as Sim,Transition as Trans
 import discrete_graphics as gr
 
-
+# Define blocks
 hexagon = Block([[1,0,0],[1,1,1],[1,1,0],[0,2,1],[0,1,0],[0,1,1]],muc=0.5)
 triangle = Block([[0,0,1]],muc=0.5)
 link = Block([[0,0,0],[0,1,1],[1,0,0],[1,0,1],[1,1,1],[0,1,0]],muc=0.5)
-hextarget = Block([[1,0,1],[0,0,0],[2,0,0]])
+
+# Set up wandb
 wandb_project = "sycamore"
 wandb_entity = "sabri-elamrani"
+USE_WANDB = True
 
+# Save options
+SAVE = False
 TRAINED_AGENT = "my_trained_agent.pickle"
 
 
@@ -51,7 +55,7 @@ class ReplayDiscreteGymSupervisor():
         # wandb init
         if use_wandb:
             self.use_wandb = True
-            self.run = wandb.init(project=wandb_project, entity=wandb_entity,config=config)
+            self.run = wandb.init(project=wandb_project, entity=wandb_entity, config=config)
             self.config = wandb.config
         else:
             self.use_wandb = False
@@ -102,16 +106,6 @@ class ReplayDiscreteGymSupervisor():
                                 use_wandb=use_wandb,
                                 log_freq = self.log_freq,
                                 env="norot")
-        
-        # if self.agent.rep == 'graph':
-        #     #create a dummy situation to initialize the graph
-            
-        #     self.sim.add_ground(triangle,[self.sim.grid.shape[0]-1,0])
-        #     self.sim.add_ground(triangle,[1,0])
-        #     self.sim.put_rel(hexagon, 0,0,0,0,idconsup = 0)
-        #     self.sim.put_rel(hexagon, 0,0,1,0)
-        #     self.sim.hold(0,2)
-        #     self.agent.create_model(self.sim,config)
 
         # Reward fun chosen (see def in relative_single_agent) 
         if reward_function is None:
@@ -599,7 +593,7 @@ if __name__ == '__main__':
     # Create gym
     gym = ReplayDiscreteGymSupervisor(config,
               agent_type=SACSupervisorSparse,
-              use_wandb=True,
+              use_wandb=USE_WANDB,
               actions= ['Ph'], # place-hold only necessary action
               block_type=[hexagon],
               random_targets='random_gap', 
@@ -616,8 +610,10 @@ if __name__ == '__main__':
     anim = gym.training(max_steps = 20, draw_freq = 200, pfreq =10) # draw and print freq
     #gym.test_gap()
     #gr.save_anim(anim,os.path.join(".", f"test_graph"),ext='html')
-    with open(TRAINED_AGENT, "wb") as input_file:
-        pickle.dump(gym.agent,input_file)
+
+    if SAVE:
+        with open(TRAINED_AGENT, "wb") as input_file:
+            pickle.dump(gym.agent,input_file)
 
     t1 = time.perf_counter()
     print(f"time spent: {t1-t0}s")
