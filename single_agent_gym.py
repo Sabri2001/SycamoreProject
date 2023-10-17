@@ -15,7 +15,7 @@ import numpy as np
 import pickle
 from discrete_blocks import discrete_block as Block
 from relative_single_agent import SACSupervisorSparse,generous_reward,punitive_reward,modular_reward
-from discrete_simulator import DiscreteSimulator as Sim,Transition as Trans
+from discrete_simulator import DiscreteSimulator as Sim, Transition, Trajectory
 import discrete_graphics as gr
 
 # Define blocks
@@ -29,8 +29,8 @@ wandb_entity = "sabri-elamrani"
 USE_WANDB = True
 
 # Save options
-SAVE = False
-TRAINED_AGENT = "my_trained_agent.pickle"
+SAVE = True
+TRAINED_AGENT = "my_trained_agent_gap2.pickle"
 
 
 class ReplayDiscreteGymSupervisor():
@@ -61,7 +61,7 @@ class ReplayDiscreteGymSupervisor():
             self.use_wandb = False
             self.config = config
 
-        # ranges -> what?
+        # ranges (blocks)
         if ranges is None:
             ranges = np.ones((n_robots,maxs[0],maxs[1],2),dtype = bool)
         self.log_freq = log_freq
@@ -87,6 +87,7 @@ class ReplayDiscreteGymSupervisor():
         else:
             self.targets = targets
         
+        # Init simu env
         self.sim = Sim(maxs,n_robots,block_type,len(targets_loc),max_blocks,max_interfaces,ground_blocks=self.targets)
         self.random_targets = random_targets
         
@@ -96,7 +97,7 @@ class ReplayDiscreteGymSupervisor():
                 self.sim.add_ground(tar,loc)
         self.setup = copy.deepcopy(self.sim)
         
-        # init agent
+        # Init agent
         self.agent = agent_type(n_robots,
                                 block_type,
                                 self.config,
@@ -117,14 +118,25 @@ class ReplayDiscreteGymSupervisor():
                 self.rewardf = modular_reward
         else:
             self.rewardf = reward_function
+
+        # Init Trajectory buffer
+        self.trajectory_buffer = np.empty(self.config['train_n_episodes'],dtype = object)
+
+        # Store config as attribute -> for access elsewhere
+        self.config = config
         
     def episode_restart(self,
                           max_steps,
                           draw=False,
                           buffer=None,
+                          trajectory_buffer=None,
                           buffer_count=0,
                           auto_leave = True,
                           ):
+        """
+        Runs an episode, computes reward and updates policy.
+        """
+        # Some inits
         use_mask = self.config['ep_use_mask']
         batch_size = self.config['ep_batch_size']
         #if the action is not valid, stop the episode
@@ -133,6 +145,8 @@ class ReplayDiscreteGymSupervisor():
         rewards_ar = np.zeros((self.n_robots,max_steps))
         self.sim =copy.deepcopy(self.setup)
         gap=None
+
+        # Init targets
         if self.random_targets== 'random':
             validlocs = np.ones(self.sim.grid.shape,dtype=bool)
             #dont allow the target to be all the way to the extremity of the grid
@@ -168,7 +182,8 @@ class ReplayDiscreteGymSupervisor():
             self.sim.add_ground(self.targets[self.targets_gap[gap,1]],[width[self.targets_gap[gap,0]]+gap+1,0],ground_type=self.targets_gap[gap,1])
         elif self.random_targets== 'half_fixed':
             assert False, "not implemented"
-                    
+
+        # More inits
         if draw:
             self.sim.setup_anim()
             self.sim.add_frame()
@@ -176,9 +191,15 @@ class ReplayDiscreteGymSupervisor():
             mask = self.agent.generate_mask(self.sim,0)
         else:
             mask = None
+
+        # Init Trajectory
+        trajectory = Trajectory()
+
+        # RUN AN EPISODE
         for step in range(max_steps):
             for idr in range(self.n_robots):
                 
+                # Mask -> always use it
                 if use_mask:
                     prev_state = {'grid':copy.deepcopy(self.sim.grid),
                                   'graph': copy.deepcopy(self.sim.graph),
@@ -188,8 +209,10 @@ class ReplayDiscreteGymSupervisor():
                 else:
                     prev_state = {'grid':copy.deepcopy(self.sim.grid),'graph': copy.deepcopy(self.sim.graph),'mask':None,'forces':copy.deepcopy(self.sim.ph_mod),'sim':copy.deepcopy(self.sim)}
                 
+                # Choose action
                 action,action_args,*action_enc = self.agent.choose_action(idr,self.sim,mask=mask)
                 
+                # Take action
                 valid,closer,blocktype,interfaces = self.agent.Act(self.sim,action,**action_args,draw=draw)
                 if use_mask:
                     mask = self.agent.generate_mask(self.sim,(idr+1)%self.n_robots)
@@ -221,8 +244,7 @@ class ReplayDiscreteGymSupervisor():
                         failure = True
                         mask[:]=False
                     
-                    
-                    
+                # Needed for reward computation
                 if interfaces is not None:
                     sides_id,n_sides_ori = np.unique(interfaces[:,0],return_counts=True)
                     n_sides = np.zeros(6,dtype=int)
@@ -230,23 +252,33 @@ class ReplayDiscreteGymSupervisor():
                 else:
                     n_sides = None
                 
-                reward =self.rewardf(action, valid, closer, success,failure,n_sides=n_sides,config=self.config)
+                # Compute reward and reward features for this robot/step
+                reward =self.rewardf(action, valid, closer, success, failure, n_sides=n_sides, config=self.config)
+                reward_features = [int(bool(action)), int(closer), int(success), \
+                                   int(failure), n_sides, \
+                                    int(not np.all(np.logical_xor(n_sides[:3],n_sides[3:])))]
                 
-                    
+                # Add reward to reward array (robot,step), add transition to buffer and trajectory 
                 rewards_ar[idr,step]=reward
                 if self.agent.rep == 'graph':
                     buffer.push(idr,prev_state['sim'],action_enc[0],self.sim,reward,terminal=success or failure)
                 else:
-                    buffer[(buffer_count)%buffer.shape[0]] = Trans(prev_state,
-                                                                    action_enc,
-                                                                    reward,
-                                                                   {'grid':copy.deepcopy(self.sim.grid),
-                                                                    'graph': copy.deepcopy(self.sim.graph),
-                                                                    'mask':mask,
-                                                                    'forces':copy.deepcopy(self.sim.ph_mod)})
+                    current_transition = Transition(prev_state,
+                                                        action_enc,
+                                                        reward,
+                                                        {'grid':copy.deepcopy(self.sim.grid),
+                                                        'graph': copy.deepcopy(self.sim.graph),
+                                                        'mask':mask,
+                                                        'forces':copy.deepcopy(self.sim.ph_mod)},
+                                                        reward_features)
+                    buffer[(buffer_count)%buffer.shape[0]] = current_transition
                     buffer_count +=1
+                    trajectory.add_transition(current_transition)
+                
+                # Update policy with using reward buffer
                 self.agent.update_policy(buffer,buffer_count,batch_size)
             
+                # Drawing and terminations
                 if draw:
                     action_args.pop('rid')
                     
@@ -262,7 +294,7 @@ class ReplayDiscreteGymSupervisor():
         else:
             anim = None
         
-        return rewards_ar,step, anim,buffer,buffer_count,success,gap
+        return rewards_ar,step,anim,buffer,trajectory_buffer,buffer_count,success,gap
     
     def training(self,
                 pfreq = 10,
@@ -271,7 +303,10 @@ class ReplayDiscreteGymSupervisor():
                 save_freq = 1000,
                 success_rate_decay = 0.01,
                 log_dir=None):
-        
+        """
+        Initialises buffer, and repeatedly (train_n_episodes times) 
+        calls episode_restart() to update policy.
+        """
         # init success_rate for each possible gap size
         if self.random_targets == 'random_gap' or self.random_targets == 'random_gap_center':
             success_rate = np.zeros(self.gap_range[1])
@@ -288,20 +323,23 @@ class ReplayDiscreteGymSupervisor():
                 log_dir = os.path.join('log','log'+str(np.random.randint(10000000)))
                 os.mkdir(log_dir)
 
-        # init buffer
-        buffer = np.empty(self.config['train_l_buffer'],dtype = object)
-        buffer_count=0
+        # init transition buffer and trajectory buffer
+        transition_buffer = np.empty(self.config['train_l_buffer'],dtype = object)
+        self.trajectory_buffer = np.empty(shape=self.config['train_n_episodes'], dtype=object)
+        buffer_count= 0
 
         # start training
         print("Training started")
 
         # run over several episodes
         for episode in range(self.config['train_n_episodes']):
-            # restart episode
-            (rewards_ep,n_steps_ep,
-             anim,buffer,buffer_count, success,gap) = self.episode_restart(max_steps,
+            # run an episode
+            (rewards_ep, n_steps_ep,
+             anim, transition_buffer, trajectory_buffer, 
+             buffer_count, success, gap) = self.episode_restart(max_steps,
                                                               draw = episode % draw_freq == 0,#draw_freq-1,
-                                                              buffer=buffer,
+                                                              buffer=transition_buffer,
+                                                              trajectory_buffer=trajectory_buffer,
                                                               buffer_count=buffer_count,
                                                               auto_leave=True,
                                                               )
@@ -387,6 +425,8 @@ class ReplayDiscreteGymSupervisor():
                 prev_state = {'grid':copy.deepcopy(self.sim.grid),'graph': copy.deepcopy(self.sim.graph),'mask':mask.copy(),'forces':copy.deepcopy(self.sim.ph_mod)}
                 time_sim+=time.perf_counter()-t0s
                 t0c=time.perf_counter()
+
+                # Choose action
                 action,action_args,*action_enc = self.agent.choose_action(idr,self.sim,mask=mask)
                 time_chose+=time.perf_counter()-t0c
                 if alterations is not None and step in alterations[:,0] and idr in alterations[:,1]:
@@ -394,7 +434,10 @@ class ReplayDiscreteGymSupervisor():
                         mask[action_enc[0]]=False
                         action,action_args,*action_enc = self.agent.choose_action(idr,self.sim,mask=mask)
                 t0s = time.perf_counter()
+
+                # Take action
                 valid,closer,blocktype,interfaces = self.agent.Act(self.sim,action,**action_args,draw=True)
+                
                 if use_mask:
                     mask = self.agent.generate_mask(self.sim,(idr+1)%self.n_robots)
                 if valid:
@@ -425,8 +468,7 @@ class ReplayDiscreteGymSupervisor():
                 if step == max_steps-1 and idr == self.n_robots-1:
                     #the end of the episode is reached
                     mask[:]=False
-                    
-                    
+                                  
                 if interfaces is not None:
                     sides_id,n_sides_ori = np.unique(interfaces[:,0],return_counts=True)
                     n_sides = np.zeros(6,dtype=int)
@@ -434,10 +476,11 @@ class ReplayDiscreteGymSupervisor():
                 else:
                     n_sides = None
                 
-                # Compute scalar reward for this (robot,step)
+                # Compute scalar reward for this (robot,step), add it to array
                 reward = self.rewardf(action, valid, closer, success,failure,n_sides=n_sides,config=self.config)
                 rewards_ar[idr,step]=reward
                 
+                # Draw
                 action_args.pop('rid')
                 time_sim += time.perf_counter()-t0s
                 t0d=time.perf_counter()
@@ -455,7 +498,20 @@ class ReplayDiscreteGymSupervisor():
         print(f"Time used to choose the actions: {time_chose}")
         print(f"Time used to draw the animation: {time_draw}")
         return rewards_ar, anim
-    
+
+    def sample_trajectories(self, nb_trajectories):
+        # Get the indices of trajectories to sample
+        if nb_trajectories > len(self.trajectory_buffer):
+            raise ValueError("nb_trajectories exceeds the number of stored trajectories.")
+
+        # Sample with replacement (good????)
+        sampled_indices = np.random.choice(len(self.trajectory_buffer), size=nb_trajectories, replace=True)
+
+        # Extract the sampled trajectories
+        sampled_trajectories = [self.trajectory_buffer[i] for i in sampled_indices]
+
+        return sampled_trajectories
+
     def test(self,
              draw=True):
         from relative_single_agent import int2act_norot
@@ -543,7 +599,7 @@ class ReplayDiscreteGymSupervisor():
      
 if __name__ == '__main__':
     print("Start gym")
-    config = {'train_n_episodes':100,
+    config = {'train_n_episodes':1000,
             'train_l_buffer':200,
             'ep_batch_size':32,
             'ep_use_mask':True,
@@ -573,13 +629,15 @@ if __name__ == '__main__':
             'opt_Q_reduction': 'min',
             'V_optimistic':False,
             'reward_failure':-1,
-            'reward_action':{'Ph': -0.2, 'L':-0.1},
+            # 'reward_action':{'Ph': -0.2, 'L':-0.1},
+            'reward_action':{'Ph': -0.2}, # only action considered
             'reward_closer':0.4,
             'reward_nsides': 0.1,
             'reward_success':1,
             'reward_opposite_sides':0,
             'opt_lower_bound_Vt':-2,
-            'gap_range':[2,6]
+            'gap_range': [2,3] # this way gap of 2
+            # 'gap_range':[2,6]
             }
    
     # Create various shapes from basic Block object

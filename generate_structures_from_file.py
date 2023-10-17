@@ -7,14 +7,14 @@ Created on Fri Jan  6 15:53:45 2023
 File for testing loaded agents (pickle format).
 """
 from single_agent_gym import ReplayDiscreteGymSupervisor as Gym
-from relative_single_agent import A2CSupervisor, A2CSupervisorDense,SACSupervisorDense,SACSupervisorSparse
+from relative_single_agent import SACSupervisorSparse
 from discrete_blocks import discrete_block as Block
 import pickle
 import discrete_graphics as gr
 import numpy as np
 import matplotlib.pyplot as plt
 
-TRAINED_AGENT = "my_trained_agent.pickle"
+TRAINED_AGENT = "my_trained_agent_gap2.pickle"
 
 
 def create_gym(config):

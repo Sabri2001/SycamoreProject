@@ -9,21 +9,45 @@ import copy
 import matplotlib.pyplot as plt
 import numpy as np
 
-
 import discrete_graphics as gr
 from discrete_blocks import discrete_block as Block, Grid,Graph
 from physics_scipy import stability_solver_discrete as ph, get_cm
+
 triangle = Block([[0,0,1]],muc=0.7)
+
+
 class Backup():
     def __init__(self,maxs):
         self.grid = Grid(maxs)
         self.matrices = {}
+
+
 class Transition():
-    def __init__(self,state,action,reward,new_state):
-        self.state = state
+    def __init__(self,state,action,reward,new_state,reward_features=None):
+        self.state = state # Deepcopy of entire grid
         self.a = action
         self.r = reward
         self.new_state = new_state
+        self.reward_features = reward_features
+
+
+class Trajectory():
+    def __init__(self):
+        self.transitions = []
+
+    def add_transition(self, transition):
+        if isinstance(transition, Transition):
+            self.transitions.append(transition)
+        else:
+            raise ValueError("Input is not a Transition object")
+
+    def get_transitions(self):
+        return self.transitions
+
+    def __str__(self):
+        return f"Trajectory with {len(self.transitions)} transitions"
+
+
 class DiscreteSimulator():
     def __init__(self,maxs,n_robots,block_choices,n_reg,maxblocks,maxinterface,n_sim_actions = 1,ground_blocks=[triangle]):
         self.grid = Grid(maxs)
@@ -244,6 +268,8 @@ class DiscreteSimulator():
         fig,ax = gr.draw_grid(self.grid.occ.shape[:2],color='none',h=12)
         gr.fill_grid(ax, self.grid)
         plt.show()
+
+
 def scenario1(maxs, n_block = 10,maxtry=100,draw=False):
     #try to fill the grid with hexagones
     arts = []
@@ -272,6 +298,7 @@ def scenario1(maxs, n_block = 10,maxtry=100,draw=False):
         ani = gr.animate(fig, arts,sperframe= 0.1)
         return grid,bid-1,ani
     return grid,bid-1,None
+
 def scenario2(maxs, n_block = 10,maxtry=100):
     #try to fill the grid with hexagones
     block_list = [Block([[0,1,1],[1,0,0],[1,1,1],[1,1,0],[0,2,1],[0,1,0]]),
@@ -293,6 +320,7 @@ def scenario2(maxs, n_block = 10,maxtry=100):
         else:
             trys+=1
     return grid,bid-1
+
 def scenario3(maxs,n_block,maxtry = 100,mode='triangle',draw=False,physon=True):
     #pill up some shapes
     
@@ -346,6 +374,7 @@ def scenario3(maxs,n_block,maxtry = 100,mode='triangle',draw=False,physon=True):
         ani = gr.animate(fig, arts,sperframe= 0.1)
         return grid,bid-1,ani
     return grid,bid-1,None
+
 def scenario4(maxs,n_block,maxtry = 100,mode='triangle',draw=False,physon=False,scale=0.0):
     #try to bias the postion of the blocks so that they try to connect
     
@@ -408,6 +437,7 @@ def scenario4(maxs,n_block,maxtry = 100,mode='triangle',draw=False,physon=False,
         else:
             trys+=1
     return grid,bid-1
+
 def scenario5(maxs,n_block,maxtry = 100,mode='triangle',draw=False,scale=0.0):
     #try to bias the postion of the blocks so that they try to connect, with 3 grounds
     
@@ -472,6 +502,7 @@ def scenario5(maxs,n_block,maxtry = 100,mode='triangle',draw=False,scale=0.0):
         ani = gr.animate(fig, arts,sperframe= 0.1)
         return grid,bid-1,ani
     return grid,bid-1,None
+
 def scenario6(sim):
     link = Block([[0,0,0],[0,1,1],[1,0,0],[1,0,1],[1,1,1],[0,1,0]],muc=0.7)
     hexagon = Block([[0,1,1],[1,0,0],[1,1,1],[1,1,0],[0,2,1],[0,1,0]],muc=0.7)
@@ -510,6 +541,7 @@ def scenario6(sim):
     sim.add_frame()
     anim=sim.animate()
     return anim
+
 def column_check(sim):
     hexagon = Block([[0,1,1],[1,0,0],[1,1,1],[1,1,0],[0,2,1],[0,1,0]],muc=0.7)
     sim.setup_anim()
@@ -532,6 +564,7 @@ def column_check(sim):
        
     anim = sim.animate()
     return anim
+
 def column_check_right(sim):
     hexagon = Block([[0,1,1],[1,0,0],[1,1,1],[1,1,0],[0,2,1],[0,1,0]],muc=0.7)
     sim.setup_anim()
@@ -553,6 +586,7 @@ def column_check_right(sim):
        
     anim = sim.animate()
     return anim
+
 def arch_check(sim):
     hexagon = Block([[0,1,1],[1,0,0],[1,1,1],[1,1,0],[0,2,1],[0,1,0]],muc=0.5)
     sim.setup_anim()
@@ -597,6 +631,7 @@ def arch_check(sim):
             sim.add_frame()
     anim = sim.animate()
     return anim
+
 def pyg_graph_test(sim):
     from geometric_internal_model import create_sparse_graph,build_hetero_GNN,GAT,ReplayBufferSingleAgent
     from torch_geometric.nn import to_hetero,to_hetero_with_bases
@@ -629,6 +664,7 @@ def pyg_graph_test(sim):
     model = build_hetero_GNN(config,sample_graph)
     out = model(graphs.x_dict, graphs.edge_index_dict)#, graph.edge_attr_dict)
     return graphs,out
+
 def demo_action_rel(sim,groundid,block_choices=[Block([[0,1,1],[1,0,0],[1,1,1],[1,1,0],[0,2,1],[0,1,0]]),#hexagone
                                                 Block([[0,0,0],[0,1,1],[1,0,0],[1,0,1],[1,1,1],[0,1,0]])]):
     sim.setup_anim()
@@ -661,6 +697,7 @@ def demo_action_rel(sim,groundid,block_choices=[Block([[0,1,1],[1,0,0],[1,1,1],[
         sim.remove(sim.nbid-1,save=False)
     anim=sim.animate()
     return anim
+
 def act_rel(simulator,action,
         rid=None,
         sideblock=None,
@@ -718,6 +755,7 @@ def act_rel(simulator,action,
     else:
         assert False,'Unknown action'
     return valid,closer,blocktype
+
 def int2act_sup(action_id,n_side,last_only,max_blocks):
     maxs = max(n_side)
     sums = sum(n_side)
@@ -746,6 +784,7 @@ def int2act_sup(action_id,n_side,last_only,max_blocks):
             action_params = {'rid':r_id,
                               }
         return action,action_params
+
 def generate_mask(state,rid,n_side,last_only,max_blocks,n_robots):
     if last_only:
         n_actions = (2*max(n_side)*sum(n_side)+1)
@@ -777,6 +816,8 @@ def generate_mask(state,rid,n_side,last_only,max_blocks,n_robots):
     mask[base_idx+n_actions-1]=rid in state.hold
         
     return mask
+
+
 if __name__ == '__main__':
     print("Start test simulator")
     maxs = [30,10]

@@ -150,29 +150,36 @@ class SupervisorRelativeSparse(SupervisorRelative):
                 else:
                     self.n_actions = (max(self.n_side)*sum(self.n_side)+1)*n_robots
         self.action_per_robot =self.n_actions//n_robots
+    
     def update_policy(self,buffer,buffer_count,batch_size,steps=1):
          for s in range(steps):
             if batch_size > buffer_count:
                 return buffer_count
-        
+
+            # Sample from first buffer_count elements of buffer
             if buffer_count <buffer.shape[0]:
                 batch = np.random.choice(buffer[:buffer_count],batch_size,replace=False)
             else:
                 batch = np.random.choice(buffer,batch_size,replace=False)
                 #compute the state value using the target Q table
+
+            # Retrieve state/mask from batch
             if self.use_mask:
-                states = [trans.state['grid'] for trans in batch]
-                nstates = [trans.new_state['grid'] for trans in batch]
-                mask = np.array([trans.state['mask'] for trans in batch])
-                nmask = np.array([trans.new_state['mask'] for trans in batch])
+                states = [transition.state['grid'] for transition in batch]
+                nstates = [transition.new_state['grid'] for transition in batch]
+                mask = np.array([transition.state['mask'] for transition in batch])
+                nmask = np.array([transition.new_state['mask'] for transition in batch])
             else:
                 states = [trans.state['grid'] for trans in batch]
                 nstates = [trans.new_state['grid'] for trans in batch]
                 mask=None
                 nmask=None
-            actions = np.array([trans.a[0] for trans in batch])
-            rewards = np.array([[trans.r] for trans in batch],dtype=np.float32)
+            
+            # Retrieve action/reward from batch
+            actions = np.array([transition.a[0] for transition in batch])
+            rewards = np.array([[transition.r] for transition in batch],dtype=np.float32)
 
+            # Optimizer step
             l_p = self.optimizer.optimize(states,actions,rewards,nstates,self.gamma,mask,nmask=nmask)
         
     def choose_action(self,r_id,state,explore=True,mask=None):

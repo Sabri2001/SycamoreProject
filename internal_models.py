@@ -2,7 +2,7 @@
 """
 Created on Wed Oct 26 15:33:58 2022
 
-@author: valla
+@author: valla, @adapted by: sabri
 """
 import copy
 import torch
@@ -118,7 +118,8 @@ class ReplayBufferGraph(Dataset):
             idxs = torch.randperm(self.counter)
             idxs = idxs[:batch_size]
         return self[idxs]
-    
+
+
 class WolpertingerOpt():
     def __init__(self,act_net,QT,tar_act_net,tar_QT):
         
@@ -171,7 +172,8 @@ class WolpertingerOpt():
         if torch.any(torch.isnan(self.QT.state_dict()['out.weight'])) or torch.any(torch.isinf(self.QT.state_dict()['out.weight'])):
             pass
         return l.detach().cpu().numpy()
-    
+
+
 class WolpertingerActionFinderNet(nn.Module):
     def __init__(self,
                  maxs_grid,
@@ -206,6 +208,8 @@ class WolpertingerActionFinderNet(nn.Module):
             protoaction = self.out(rep)
             #protoaction+=torch.normal(mean=torch.zeros_like(protoaction),std = noise_amp*torch.ones_like(protoaction))
             return protoaction
+
+
 class DeepQT(nn.Module):
     def __init__(self,
                  maxs_grid,
@@ -238,6 +242,8 @@ class DeepQT(nn.Module):
             if prob:
                 action_values = F.softmax(action_values,dim=1)
             return action_values
+
+
 class DeepQTOptimizer():
     def __init__(self,QT):
         
@@ -255,6 +261,8 @@ class DeepQTOptimizer():
         l.backward()
         self.optimizer.step()
         return l.detach().cpu().numpy()
+
+
 class PolNetDense(nn.Module):
     def __init__(self,
                  maxs_grid,
@@ -379,6 +387,8 @@ class PolNetDense(nn.Module):
             if torch.any(torch.isnan(pol)):
                 assert False, 'nans in the policy'
             return dist,pol
+
+
 class ValNetDense(nn.Module):
     def __init__(self,
                  maxs_grid,
@@ -501,6 +511,8 @@ class ValNetDense(nn.Module):
             if torch.any(torch.isnan(val)):
                 assert False, 'nans value'
             return val
+
+
 class SACDenseOptimizer():
     def __init__(self,maxs_grid,max_blocks,max_interfaces,n_type_block,n_sides,n_robots,n_actions,policy,config):
         self.use_wandb = policy.use_wandb
@@ -684,6 +696,8 @@ class PolNetSparse(nn.Module):
             if torch.any(torch.isnan(pol)):
                 assert False, 'nans in the policy'
             return dist,pol
+
+
 class ValNetSparse(nn.Module):
     def __init__(self,
                  maxs_grid,
@@ -708,7 +722,7 @@ class ValNetSparse(nn.Module):
                         'stride':config['SEnc_stride']}
         
         
-        self.state_encoder = StateEncoder(maxs_grid,
+        self.state_encoder = StateEncoderOE(maxs_grid,
                                           max_blocks,
                                           n_robots,
                                           n_regions,
@@ -770,6 +784,8 @@ class ValNetSparse(nn.Module):
             if torch.any(torch.isnan(Q)):
                 assert False, 'nans in the Q values'
             return Q
+
+
 class SACSparseOptimizer():
     def __init__(self,maxs_grid,max_blocks,n_robots,n_regions,n_actions,policy,config):
         self.use_wandb = policy.use_wandb
@@ -801,6 +817,7 @@ class SACSparseOptimizer():
             self.name = self.pol.name+"/"
         else:
             self.name = ""
+    
     def optimize(self,state,actionid,rewards,nstates,gamma,mask=None,nmask=None,old_entropy =None):
         t00 = time.perf_counter()
         t0 = time.perf_counter()
@@ -870,9 +887,9 @@ class SACSparseOptimizer():
                 sd_target[key]= (1-self.tau)*sd_target[key]+self.tau*sd[key]
             self.target_Qs[i].load_state_dict(sd_target)
         t11  = time.perf_counter()
-        #print(f"total: {t11-t00}")
+
+        # wandb log
         if self.use_wandb and self.step % self.log_freq == 0:
-            
             wandb.log({self.name+"l_p": l_p.detach().cpu().numpy(),
                        self.name+"rewards":rewards.detach().mean().cpu().numpy(),
                        self.name+"best_action": argmax,
@@ -887,8 +904,10 @@ class SACSparseOptimizer():
                        self.name+"l_alpha": l_alpha.detach().cpu().numpy(),
                       },step=self.step)
             #wandb.watch(self.model)
+
         self.step+=1
         return l_p.detach().cpu().numpy()
+    
     def save(self,log_dir,name):
         torch.save(self.pol.state_dict(),os.path.join(log_dir,f'{name}_pol.h5'))
         [torch.save(self.Qs[i].state_dict(),os.path.join(log_dir,f'{name}_Q_{i}.h5')) for i in range(2)]
@@ -897,6 +916,8 @@ class SACSparseOptimizer():
         torch.save(self.opt_alpha.state_dict(),os.path.join(log_dir,f'{name}_opt_alpha.h5'))
         torch.save(self.opt_pol.state_dict(),os.path.join(log_dir,f'{name}_opt_pol.h5'))
         [torch.save(self.opt_Q[i].state_dict(),os.path.join(log_dir,f'{name}_opt_Q_{i}.h5')) for i in range(2)]
+
+
 class A2CDense(nn.Module):
     def __init__(self,
                  maxs_grid,
@@ -1038,6 +1059,8 @@ class A2CDense(nn.Module):
                 assert False, 'nans in the policy'
             
             return val,pol
+
+
 class A2CDenseOptimizer():
     def __init__(self,model,config):
         lr = config['opt_lr']
@@ -1214,6 +1237,8 @@ class A2CShared(nn.Module):
                 assert False, 'nans in the policy'
             
             return val,dist
+
+
 class A2CSharedOptimizer():
     def __init__(self,model,config):
         lr = config['opt_lr']
@@ -1287,6 +1312,8 @@ class A2CSharedOptimizer():
         #wandb.watch(self.model)
         self.step+=1
         return l_v.detach().cpu().numpy(), l_p.detach().cpu().numpy()
+
+
 class A2CSharedEncDec(nn.Module):
     def __init__(self,
                  maxs_grid,
@@ -1361,6 +1388,8 @@ class A2CSharedEncDec(nn.Module):
                 assert False, 'nans in the policy'
             
             return val,pol
+
+
 class A2CSharedEncDecOptimizer():
     def __init__(self,model,lr=1e-3,pol_over_val = 2e-5,tau=1e-5):
         self.pol_over_val = pol_over_val
@@ -1494,6 +1523,7 @@ class GNBlock(nn.Module):
         #print(f"     {t_lin=}")
         return out_E,out_V,out_u.unsqueeze(2)
 
+
 class StateEncoder(nn.Module):
     def __init__(self,
                  maxs_grid,
@@ -1536,6 +1566,8 @@ class StateEncoder(nn.Module):
         for conv in self.convinternal:
             rep = F.relu(conv(rep))
         return rep
+
+
 class StateEncoderOE(nn.Module):
     def __init__(self,
                  maxs_grid,
@@ -1561,7 +1593,9 @@ class StateEncoderOE(nn.Module):
             dimy = (dimy-3)//stride+1
         assert dimx > 0 and dimy>0, "out dims are negative"
         self.out_dims = [n_channels,dimx,dimy]
+        
     def forward(self,grids):
+        # Channels, given as input to net
         sides = torch.tensor(np.array([grid.neighbours[:,:,:,:,0]>-1 for grid in grids]),device=self.device,dtype=torch.float)
         last_block = torch.tensor(np.array([grid.occ== np.max(grid.occ) for grid in grids]),device=self.device,dtype=torch.float)
         ground = torch.tensor(np.array([grid.occ== 0 for grid in grids]),device=self.device,dtype=torch.float)
@@ -1579,6 +1613,8 @@ class StateEncoderOE(nn.Module):
         for conv in self.convinternal:
             rep = F.relu(conv(rep))
         return rep
+
+
 class ActionDecoder(nn.Module):
     def __init__(self,
                  maxs_grid,
@@ -1615,6 +1651,8 @@ class ActionDecoder(nn.Module):
             out = F.softmax(rep.flatten(start_dim=1),dim=1).reshape(rep.shape)
             
         return out
+
+
 class WolpertingerQTable(nn.Module):
     #initialise a neural network that maps action and state to discounted total reward
     def __init__(self,

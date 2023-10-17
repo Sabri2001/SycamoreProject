@@ -1,4 +1,5 @@
 import abc
+import numpy as np
 from typing import(
     Sequence
 )
@@ -31,4 +32,29 @@ class Fragmenter(abc.ABC):
         Returns:
             a sequence of fragment pairs
         """  # noqa: DAR202
-        
+
+
+class RandomFragmenter(Fragmenter):
+    def __init__(self):
+        pass
+
+    def __call__(self, trajectories, num_pairs):
+        """
+        Create pairs of complete trajectories from a collection of trajectories.
+
+        Args:
+            trajectories: A collection of trajectories (each trajectory is a list of Transition objects).
+            num_pairs: The number of trajectory pairs to sample.
+
+        Returns:
+            A list of trajectory pairs, where each pair is represented as a tuple of two complete trajectories.
+        """
+        trajectory_pairs = []
+
+        for _ in range(num_pairs):
+            # Randomly select two trajectories from the list of trajectories
+            selected_trajectories = np.random.choice(trajectories, size=2, replace=True)
+            trajectory_pairs.append(tuple(selected_trajectories))
+
+        return trajectory_pairs
+
