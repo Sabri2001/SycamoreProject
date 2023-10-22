@@ -161,11 +161,12 @@ class FormerPreferenceComparisons():
         shares = util.oric(probs * total_comparisons)
         schedule = [initial_comparisons] + shares.tolist()
         print(f"Query schedule: {schedule}")
-
         timesteps_per_iteration, extra_timesteps = divmod(
             total_timesteps,
             self.num_iterations,
         )
+
+        # For logging
         reward_loss = None
         reward_accuracy = None
 
@@ -315,20 +316,27 @@ class PreferenceComparisons():
 
         # MAIN LOOP
         for i, num_pairs in enumerate(schedule):
-            ##########################
-            # Gather new preferences #
-            ##########################
-            # Collect trajectories
-            print(f"Collecting {2 * num_pairs} trajectories")
-            trajectories = self.gym.sample_trajectories(2*num_pairs)
+            #############################################
+            # Generate trajectories with trained policy #
+            #############################################
+            # Generate trajectories
+            nb_traj = self.transition_oversampling* 2 * num_pairs
+            print(f"Collecting {nb_traj} trajectories")
+            trajectories = self.gym.generate_trajectories(nb_traj)
 
             # Create fragments pairs from trajectories (to be compared)
             print("Creating fragment pairs")
             fragments = self.fragmenter(trajectories, num_pairs)
+            print("Fragmentation done")
             
+            ##########################
+            # Gather new preferences #
+            ##########################    
             # Gather synthetic or human preferences
             print("Gathering preferences")
             preferences = self.preference_gatherer(fragments)
+            print("Gathering over")
+            print("Preferences gathered: ", preferences)
 
             # Store preferences in Preference Dataset
             self.dataset.push(fragments, preferences)
@@ -337,14 +345,15 @@ class PreferenceComparisons():
             ##########################
             # Train the reward model #
             ##########################
-
             # On the first iteration, we train the reward model for longer,
             # as specified by initial_epoch_multiplier.
-            epoch_multiplier = 1.0
+            epoch_multip = 1.0
             if i == 0:
-                epoch_multiplier = self.initial_epoch_multiplier # default: 200
+                epoch_multip = self.initial_epoch_multiplier # default: 200
 
-            self.reward_trainer.train(self.dataset, epoch_multiplier=epoch_multiplier)
+            print("Training reward model")
+            self.reward_trainer.train(self.dataset, epoch_multiplier=epoch_multip)
+            print("Reward training finished")
 
             ###################
             # Train the agent #
@@ -356,7 +365,8 @@ class PreferenceComparisons():
             if i == self.num_iterations - 1:
                 num_steps += extra_timesteps
             
-            print(f"Training agent")
+            print("Training agent")
             self.gym.training()
+            print("Training finished")
 
         return {"reward_loss": reward_loss, "reward_accuracy": reward_accuracy}

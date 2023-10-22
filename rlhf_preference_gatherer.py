@@ -32,8 +32,8 @@ class PreferenceGatherer(abc.ABC):
 
 
 class SyntheticPreferenceGatherer(PreferenceGatherer):
-    def __init__(self, config):
-        self.config = config
+    def __init__(self, coeff):
+        self.coeff = coeff
 
     def __call__(self, trajectory_pairs):
         """
@@ -54,30 +54,12 @@ class SyntheticPreferenceGatherer(PreferenceGatherer):
         preferences = []
 
         for trajectory_pair in trajectory_pairs:
-            trajectory1, trajectory2 = trajectory_pair
-            reward1, reward2 = 0, 0
+            trajectory1 = trajectory_pair[0].get_transitions()
+            trajectory2 = trajectory_pair[1].get_transitions()
 
-            # Calculate reward1 for the first trajectory
-            for transition in trajectory1:
-                reward_features = transition.reward_features
-                action = reward_features[0]
-                closer = reward_features[1]
-                success = reward_features[2]
-                failure = reward_features[3]
-                n_sides = reward_features[4]
-
-                reward1 += modular_reward(action,True,closer,success,failure,self.config,n_sides)
-
-            # Calculate reward2 for the second trajectory
-            for transition in trajectory2:
-                reward_features = transition.reward_features
-                action = reward_features[0]
-                closer = reward_features[1]
-                success = reward_features[2]
-                failure = reward_features[3]
-                n_sides = reward_features[4]
-
-                reward2 += modular_reward(action,True,closer,success,failure,self.config,n_sides)
+            # Calculate reward for both trajectories
+            reward1 = self.reward_trajectory(trajectory1)
+            reward2 = self.reward_trajectory(trajectory2)
 
             # Compute preference scores
             if reward1 > reward2:
@@ -89,3 +71,13 @@ class SyntheticPreferenceGatherer(PreferenceGatherer):
 
         return np.array(preferences)
 
+    def reward_trajectory(self, trajectory):
+        """Compute reward for a trajectory."""
+        reward = 0
+        for transition in trajectory:
+            reward += self.reward_transition(transition)
+        return reward
+    
+    def reward_transition(self, transition):
+        return np.dot(self.coeff, transition.reward_features)
+    

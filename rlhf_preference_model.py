@@ -1,6 +1,6 @@
 import numpy as np
 
-from rlhf_reward_model import RewardModel, RewardLinear
+from rlhf_reward_model import RewardModel
 
 
 class PreferenceModel():
@@ -8,7 +8,7 @@ class PreferenceModel():
 
     def __init__(
         self,
-        model: RewardModel,
+        reward_model: RewardModel,
         noise_prob: float = 0.0,
         threshold: float = 50,
     ):
@@ -20,8 +20,7 @@ class PreferenceModel():
                 is uniformly random (used for the model of preference generation
                 that is used for the loss).
         """
-        super().__init__()
-        self.model = model
+        self.reward_model = reward_model
         self.noise_prob = noise_prob # TODO: implement this! (10% chance uniform response)
         self.threshold = threshold
 
@@ -40,11 +39,11 @@ class PreferenceModel():
             Preference probability for the first element of
             each trajectory pair in trajectory_pairs.
         """
-        traj1, traj2 = trajectory_pair
-        rews1 = RewardLinear(traj1)
-        rews2 = RewardLinear(traj2)
-        proba = self.probability(rews1, rews2)
-
+        traj1 = trajectory_pair[0].get_transitions()
+        traj2 = trajectory_pair[1].get_transitions()
+        reward1 = self.reward_model.forward(traj1)
+        reward2 = self.reward_model.forward(traj2)
+        proba = self.probability(reward1, reward2)
         return proba
 
     def probability(self, rews1, rews2):

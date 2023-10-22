@@ -1,4 +1,6 @@
 import numpy as np
+import pickle
+from imitation.data.types import AnyPath
 
 
 class PreferenceDataset():
@@ -56,3 +58,11 @@ class PreferenceDataset():
     def __len__(self) -> int:
         assert len(self.fragments1) == len(self.fragments2) == len(self.preferences)
         return len(self.fragments1)
+
+    def save(self, path: AnyPath) -> None:
+        with open(path, "wb") as file:
+            pickle.dump(self, file)
+
+    def load(path: AnyPath) -> "PreferenceDataset":
+        with open(path, "rb") as file:
+            return pickle.load(file)

@@ -108,6 +108,8 @@ class NaiveRandom(Agent):
         rot = np.random.randint(6)
         bid = np.random.randint(np.max(state.occ)+1)
         return act,{'blocktype': blocktype,'pos':[posx,posy],'ori':rot,'bid':bid}
+
+
 class A2CLearner(Agent):
     def __init__(self,
                  rid,
@@ -193,6 +195,8 @@ class A2CLearner(Agent):
             return action,action_params,actionid
         else:
             return None,None,actionid
+
+
 class QTLearner(Agent):
     def __init__(self,
                  rid,
@@ -256,6 +260,8 @@ class QTLearner(Agent):
             return action,action_params,actionid
         else:
             return None,None,actionid
+
+
 class WolpertingerLearner(Agent):
     def __init__(self,
                  rid,
@@ -356,6 +362,7 @@ class WolpertingerLearner(Agent):
         else:
             return None,None,proto_action,action
 
+
 def vec2act(action_vec,nblocktypes,gridsize,max_block):
     action_vec = np.reshape(action_vec,(5,5))
     actionid = np.argmax(action_vec[:,0])
@@ -383,6 +390,7 @@ def vec2act(action_vec,nblocktypes,gridsize,max_block):
         action = 'L'
         action_params = {}
     return action,action_params
+
 def generate_actions(ntype_blocks,grid_size,max_blocks):
     actions = np.zeros((grid_size[0]*grid_size[1]*6*ntype_blocks*2+2*max_blocks+1,5,5))
     #each hold action:
@@ -442,9 +450,11 @@ def generate_mask(state,rid,block_type,grid_size,max_blocks):
     #leave
     mask[-1]=rid in state.hold
     return mask
+
 def args2idx(pos,ori,grid_size):
     idx =  (pos[:,0]*grid_size[1]*6+pos[:,1]*6+ori).astype(int)
     return idx
+
 def reward_link2(action,valid,closer,terminal):
     #reward specific to the case where the robots need to link two points
 
@@ -480,3 +490,4 @@ if __name__ == '__main__':
     print("Start test Agent")
     
     print("\nEnd test Agent")
+    

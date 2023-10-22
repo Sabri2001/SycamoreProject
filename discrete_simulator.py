@@ -30,6 +30,9 @@ class Transition():
         self.new_state = new_state
         self.reward_features = reward_features
 
+    def get_reward_features(self):
+        return self.reward_features
+
 
 class Trajectory():
     def __init__(self):
@@ -43,6 +46,12 @@ class Trajectory():
 
     def get_transitions(self):
         return self.transitions
+
+    def sum_reward_features(self):
+        sum = np.array([0.,0.,0.,0.,0.,0.])
+        for transition in self.get_transitions():
+            sum += transition.get_reward_features()
+        return sum
 
     def __str__(self):
         return f"Trajectory with {len(self.transitions)} transitions"

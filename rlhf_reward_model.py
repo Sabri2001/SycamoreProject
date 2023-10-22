@@ -41,13 +41,13 @@ class RewardLinear(RewardModel):
         Initialize the Linear Reward Model.
         """
         if coefficients == None:
-            self.coefficients = np.array([0,0,0,0,0,0])
+            self.coefficients = np.array([0.,0.,0.,0.,0.,0.])
         else:
             self.coefficients = coefficients
 
     def forward(
         self,
-        trajectory: Trajectory
+        trajectory
     ):
         """Compute reward for a trajectory."""
         reward = 0
@@ -57,7 +57,7 @@ class RewardLinear(RewardModel):
     
     def reward_transition(
         self,
-        transition: Transition
+        transition
     ):
         return np.dot(self.coefficients, transition.reward_features)
 

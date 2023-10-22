@@ -29,6 +29,7 @@ class SupervisorRelative(metaclass=abc.ABCMeta):
         self.last_only = config['agent_last_only']
         self.gamma = 1-config['agent_discount_f']
         self.use_mask = config['ep_use_mask']
+
     def Act(self,simulator,action,
             rid=None,
             sideblock=None,
@@ -77,16 +78,20 @@ class SupervisorRelative(metaclass=abc.ABCMeta):
         else:
             assert False,'Unknown action'
         return valid,closer,blocktype,interfaces
+    
     def save(self,name,path):
         file = open(os.path.join(path,name+'.pickle'), 'wb')
         pickle.dump(self,file)
         file.close()
+    
     @abc.abstractmethod
     def generate_mask(self,state,rid):
         pass
+    
     @abc.abstractmethod
     def update_policy(self,**kwargs):
         pass
+    
     @abc.abstractmethod
     def choose_action(self,state):
         pass

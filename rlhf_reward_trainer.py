@@ -48,7 +48,7 @@ class LinearRewardTrainer(RewardTrainer):
         """
         self.preference_model = preference_model
 
-    def train(self, dataset: PreferenceDataset, learning_rate = 1., epoch_mutliplier = 1.):
+    def train(self, dataset, epoch_multiplier = 1., learning_rate = 0.08):
         """Train the reward model on a batch of fragment pairs and preferences.
 
         Args:
@@ -56,12 +56,13 @@ class LinearRewardTrainer(RewardTrainer):
             epoch_multiplier: how much longer to train for than usual
                 (measured relatively).
         """
-        num_epochs = epoch_mutliplier*10
+        # NOTE: quite sensitive to learning rate + not reliably going down...
+        num_epochs = int(epoch_multiplier*10)
 
         for epoch in range(num_epochs):
             total_loss = 0.0
             for sample in dataset:
-                trajectory_pair, pref_traj1 = sample # Note: here batch of size 1 -> to change?
+                trajectory_pair, pref_traj1 = sample # NOTE: here batch of size 1 -> to change?
 
                 # Calculate reward values using the preference model
                 proba_traj1 = self.preference_model.forward(trajectory_pair)
@@ -70,8 +71,8 @@ class LinearRewardTrainer(RewardTrainer):
                 total_loss -= pref_traj1*np.log(proba_traj1) + (1-pref_traj1)*np.log(1-proba_traj1)
 
                 # Compute the gradient and update the coefficients
-                features_traj1 = trajectory_pair[0].reward_features
-                features_traj2 = trajectory_pair[1].reward_features
+                features_traj1 = trajectory_pair[0].sum_reward_features()
+                features_traj2 = trajectory_pair[1].sum_reward_features()
                 gradient = -pref_traj1*( \
                     proba_traj1*(1-proba_traj1)*features_traj1 \
                     - proba_traj1*(1-proba_traj1)*features_traj2) \
@@ -80,9 +81,10 @@ class LinearRewardTrainer(RewardTrainer):
                     - proba_traj1*(1-proba_traj1)*features_traj1
                         )
 
-                self.preference_model.model.coefficients -= self.learning_rate * gradient
+                self.preference_model.reward_model.coefficients -= learning_rate * gradient
 
             # Print the average loss for this epoch
-            average_loss = total_loss/ len(dataset)
-            print(f"Epoch [{epoch + 1}/{num_epochs}] \
-                  Loss: {average_loss:.4f}")
+            if epoch%10 == 0:
+                average_loss = total_loss/ len(dataset)
+                print(f"Epoch [{epoch + 1}/{num_epochs}] \
+                    Loss: {average_loss:.4f}")
