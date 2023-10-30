@@ -22,42 +22,42 @@ class PreferenceDataset():
                 dataset acts as a FIFO queue, and the oldest comparisons are evicted
                 when `push()` is called and the dataset is at max capacity.
         """
-        self.fragments1 = []
-        self.fragments2 = []
+        self.traj_list1 = []
+        self.traj_list2 = []
         self.max_size = max_size
         self.preferences: np.ndarray = np.array([])
 
     def push(
         self,
-        fragments: [],
+        pairs: [],
         preferences: np.ndarray,
     ):
         """Add more samples to the dataset.
 
         Args:
-            fragments: list of pairs of trajectories to add
+            pairs: list of pairs of trajectories to add
             preferences: corresponding preference 
         """
-        fragments1, fragments2 = zip(*fragments)
+        traj_list1, traj_list2 = zip(*pairs)
 
-        self.fragments1.extend(fragments1)
-        self.fragments2.extend(fragments2)
+        self.traj_list1.extend(traj_list1)
+        self.traj_list2.extend(traj_list2)
         self.preferences = np.concatenate((self.preferences, preferences))
 
         # Evict old samples if the dataset is at max capacity
         if self.max_size is not None:
             extra = len(self.preferences) - self.max_size
             if extra > 0:
-                self.fragments1 = self.fragments1[extra:]
-                self.fragments2 = self.fragments2[extra:]
+                self.traj_list1 = self.traj_list1[extra:]
+                self.traj_list2 = self.traj_list2[extra:]
                 self.preferences = self.preferences[extra:]
 
     def __getitem__(self, key):
-        return (self.fragments1[key], self.fragments2[key]), self.preferences[key]
+        return (self.traj_list1[key], self.traj_list2[key]), self.preferences[key]
 
     def __len__(self) -> int:
-        assert len(self.fragments1) == len(self.fragments2) == len(self.preferences)
-        return len(self.fragments1)
+        assert len(self.traj_list1) == len(self.traj_list2) == len(self.preferences)
+        return len(self.traj_list1)
 
     def save(self, path: AnyPath) -> None:
         with open(path, "wb") as file:

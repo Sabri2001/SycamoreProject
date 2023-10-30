@@ -1,0 +1,270 @@
+Query schedule: [20, 51, 41, 34, 29, 25]
+Collecting 40 trajectories
+Trajectory generation started
+episode 0/40 rewards: [-1.  0.]
+episode 10/40 rewards: [-0.7 -0.1]
+episode 20/40 rewards: [-1.  0.]
+episode 30/40 rewards: [-1.  0.]
+Trajectory generation finished
+Creating fragment pairs
+Fragmentation done
+Gathering preferences
+Gathering over
+Preferences gathered:  [0.  1.  0.5 1.  0.5 0.5 0.5 0.  1.  1.  1.  1.  0.  0.5 0.  1.  0.  0.5
+ 0.  1. ]
+Dataset now contains 20 comparisons
+Training reward model
+Epoch [1/40]                     Loss: 0.5397
+Epoch [11/40]                     Loss: 0.4455
+Epoch [21/40]                     Loss: 0.4747
+Epoch [31/40]                     Loss: 0.4943
+Current reward coefficients:  [0.98114715 1.56675975 0.         0.         0.98114715 0.98114715]
+Reward training finished
+Training agent
+Training started
+episode 0/100 rewards: [-1.  0.]
+Success rate:  [1. 0. 0.]
+episode 10/100 rewards: [-1.  0.]
+Success rate:  [1. 0. 0.]
+episode 20/100 rewards: [ 0.3 -1. ]
+Success rate:  [1. 0. 0.]
+episode 30/100 rewards: [-1.  0.]
+Success rate:  [1. 0. 0.]
+episode 40/100 rewards: [-1.  0.]
+Success rate:  [1. 0. 0.]
+episode 50/100 rewards: [-0.7 -0.1]
+Success rate:  [1. 0. 0.]
+episode 60/100 rewards: [ 0.3 -1. ]
+Success rate:  [1. 0. 0.]
+episode 70/100 rewards: [1.7 0.3]
+Success rate:  [1.         0.         0.01970299]
+episode 80/100 rewards: [ 0.2 -1.1]
+Success rate:  [1.         0.         0.01781903]
+episode 90/100 rewards: [-1.  0.]
+Success rate:  [1.         0.         0.02534266]
+Training finished
+Collecting 102 trajectories
+Trajectory generation started
+episode 0/102 rewards: [-1.  0.]
+episode 10/102 rewards: [-1.  0.]
+episode 20/102 rewards: [-1.  0.]
+episode 30/102 rewards: [-0.7 -0.1]
+episode 40/102 rewards: [1.7 0.3]
+episode 50/102 rewards: [ 0.3 -1. ]
+episode 60/102 rewards: [ 0.3 -1. ]
+episode 70/102 rewards: [ 0.3 -1. ]
+episode 80/102 rewards: [ 0.3 -0.7]
+episode 90/102 rewards: [-1.  0.]
+episode 100/102 rewards: [1.7 0.3]
+Trajectory generation finished
+Creating fragment pairs
+Fragmentation done
+Gathering preferences
+Gathering over
+Preferences gathered:  [1.  0.  1.  0.  1.  0.  0.5 0.  0.5 0.  0.5 1.  0.  0.  0.5 0.5 1.  1.
+ 1.  0.  1.  0.5 1.  1.  0.  0.  1.  0.5 1.  1.  1.  0.  1.  0.  0.  0.
+ 0.5 0.5 0.  0.  0.5 0.  1.  1.  0.  1.  1.  0.  1.  1.  0. ]
+Dataset now contains 71 comparisons
+Training reward model
+Epoch [1/10]                     Loss: 1.4469
+Current reward coefficients:  [ 0.60605557  2.32188018  0.05752623 -0.05752623  0.69115366  0.6635818 ]
+Reward training finished
+Training agent
+Training started
+episode 0/100 rewards: [-0.7 -0.1]
+Success rate:  [1. 0. 0.]
+episode 10/100 rewards: [-1.  0.]
+Success rate:  [1.         0.         0.01854997]
+episode 20/100 rewards: [-0.7 -0.1]
+Success rate:  [1.         0.         0.02638222]
+episode 30/100 rewards: [ 0.3 -0.7]
+Success rate:  [1.         0.         0.02385961]
+episode 40/100 rewards: [ 0.2 -1.1]
+Success rate:  [1.        0.        0.0215782]
+episode 50/100 rewards: [0.7 1.3]
+Success rate:  [1.         0.         0.02951494]
+episode 60/100 rewards: [-0.7  0.3]
+Success rate:  [1.         0.         0.02669278]
+episode 70/100 rewards: [ 0.2 -1.1]
+Success rate:  [1.         0.         0.03346113]
+episode 80/100 rewards: [1.7 0.3]
+Success rate:  [1.        0.        0.0498676]
+episode 90/100 rewards: [ 0.3 -1. ]
+Success rate:  [1.         0.         0.05423454]
+Training finished
+Collecting 82 trajectories
+Trajectory generation started
+episode 0/82 rewards: [ 0.2 -0.7]
+episode 10/82 rewards: [ 0.3 -1. ]
+episode 20/82 rewards: [ 0.3 -1. ]
+episode 30/82 rewards: [ 0.3 -1. ]
+episode 40/82 rewards: [1.7 0.3]
+episode 50/82 rewards: [-1.  0.]
+episode 60/82 rewards: [ 0.3 -1. ]
+episode 70/82 rewards: [ 0.3 -1. ]
+episode 80/82 rewards: [0.7 1.3]
+Trajectory generation finished
+Creating fragment pairs
+Fragmentation done
+Gathering preferences
+Gathering over
+Preferences gathered:  [0.5 1.  0.  0.5 0.  1.  0.  1.  1.  0.  1.  1.  1.  0.  0.5 1.  0.  1.
+ 0.  0.  0.  0.  0.  0.  1.  0.  0.  0.  0.  1.  0.  0.  1.  0.  0.5 1.
+ 0.  1.  0.5 0.  0. ]
+Dataset now contains 112 comparisons
+Training reward model
+Epoch [1/10]                     Loss: 0.8536
+Current reward coefficients:  [-0.55563002  4.19821842  0.07652879 -0.07652879  0.25754546 -0.47910123]
+Reward training finished
+Training agent
+Training started
+episode 0/100 rewards: [-1.  0.]
+Success rate:  [1. 0. 0.]
+episode 10/100 rewards: [-1.  0.]
+Success rate:  [1.         0.         0.00922745]
+episode 20/100 rewards: [0.7 1.3]
+Success rate:  [1.         0.         0.02804813]
+episode 30/100 rewards: [-1.  0.]
+Success rate:  [1.         0.         0.03497218]
+episode 40/100 rewards: [-1.  0.]
+Success rate:  [1.         0.         0.04094887]
+episode 50/100 rewards: [1.7 0.3]
+Success rate:  [1.         0.         0.04703342]
+episode 60/100 rewards: [-1.  0.]
+Success rate:  [1.         0.         0.04253619]
+episode 70/100 rewards: [ 1.6 -0.2]
+Success rate:  [1.         0.         0.05769641]
+episode 80/100 rewards: [-1.  0.]
+Success rate:  [1.         0.         0.06150025]
+episode 90/100 rewards: [-1.  0.]
+Success rate:  [1.         0.         0.05561973]
+Training finished
+Collecting 68 trajectories
+Trajectory generation started
+episode 0/68 rewards: [-1.  0.]
+episode 10/68 rewards: [-1.  0.]
+episode 20/68 rewards: [ 0.3 -1. ]
+episode 30/68 rewards: [-1.  0.]
+episode 40/68 rewards: [ 0.3 -1. ]
+episode 50/68 rewards: [-1.  0.]
+episode 60/68 rewards: [-1.  0.]
+Trajectory generation finished
+Creating fragment pairs
+Fragmentation done
+Gathering preferences
+Gathering over
+Preferences gathered:  [1.  0.5 1.  1.  1.  1.  1.  0.5 0.  1.  0.  1.  1.  0.5 1.  0.5 0.  1.
+ 0.5 1.  0.  0.5 0.  0.5 1.  0.  0.5 0.5 0.  1.  0.5 0.5 0.  1. ]
+Dataset now contains 146 comparisons
+Training reward model
+Epoch [1/10]                     Loss: 0.1984
+Current reward coefficients:  [-0.82857     5.14034362  0.14965883 -0.14965883  0.62914134 -0.67891117]
+Reward training finished
+Training agent
+Training started
+episode 0/100 rewards: [ 0.2 -1.1]
+Success rate:  [1. 0. 0.]
+episode 10/100 rewards: [ 0.3 -1. ]
+Success rate:  [1. 0. 0.]
+episode 20/100 rewards: [-1.  0.]
+Success rate:  [1.        0.        0.0094148]
+episode 30/100 rewards: [-1.  0.]
+Success rate:  [1.         0.         0.01821757]
+episode 40/100 rewards: [ 0.3 -1. ]
+Success rate:  [1.         0.         0.01647564]
+episode 50/100 rewards: [ 0.3 -1. ]
+Success rate:  [1.         0.         0.01490028]
+episode 60/100 rewards: [-1.  0.]
+Success rate:  [1.         0.         0.01347554]
+episode 70/100 rewards: [-1.  0.]
+Success rate:  [1.         0.         0.01218704]
+episode 80/100 rewards: [ 0.3 -1. ]
+Success rate:  [1.         0.         0.01102174]
+episode 90/100 rewards: [-0.7 -0.1]
+Success rate:  [1.         0.         0.00996786]
+Training finished
+Collecting 58 trajectories
+Trajectory generation started
+episode 0/58 rewards: [ 0.2 -0.7]
+episode 10/58 rewards: [-1.  0.]
+episode 20/58 rewards: [ 0.3 -1. ]
+episode 30/58 rewards: [-0.7 -0.1]
+episode 40/58 rewards: [-1.  0.]
+episode 50/58 rewards: [-1.  0.]
+Trajectory generation finished
+Creating fragment pairs
+Fragmentation done
+Gathering preferences
+Gathering over
+Preferences gathered:  [0.  0.5 0.  0.  0.  0.5 1.  1.  0.5 0.  1.  0.5 0.5 0.  0.5 1.  0.5 1.
+ 1.  0.  1.  1.  1.  1.  0.5 1.  0.5 1.  0. ]
+Dataset now contains 175 comparisons
+Training reward model
+Epoch [1/10]                     Loss: 0.2127
+Current reward coefficients:  [-1.04165446  5.89240969  0.23921653 -0.23921653  0.80102414 -0.80243794]
+Reward training finished
+Training agent
+Training started
+episode 0/100 rewards: [-1.  0.]
+Success rate:  [1. 0. 0.]
+episode 10/100 rewards: [1.7 0.3]
+Success rate:  [1.   0.   0.01]
+episode 20/100 rewards: [-1.  0.]
+Success rate:  [1.         0.         0.02874482]
+episode 30/100 rewards: [ 0.2 -1.1]
+Success rate:  [1.        0.        0.0358963]
+episode 40/100 rewards: [ 0.3 -1. ]
+Success rate:  [1.         0.         0.04236397]
+episode 50/100 rewards: [-1.  0.]
+Success rate:  [1.         0.         0.03831322]
+episode 60/100 rewards: [ 0.3 -1. ]
+Success rate:  [1.         0.         0.03464979]
+episode 70/100 rewards: [-1.  0.]
+Success rate:  [1.         0.         0.04075145]
+episode 80/100 rewards: [-1.  0.]
+Success rate:  [1.         0.         0.05578149]
+episode 90/100 rewards: [ 0.3 -1. ]
+Success rate:  [1.         0.         0.05044778]
+Training finished
+Collecting 50 trajectories
+Trajectory generation started
+episode 0/50 rewards: [1.7 0.3]
+episode 10/50 rewards: [ 0.2 -1.1]
+episode 20/50 rewards: [ 0.2 -0.7]
+episode 30/50 rewards: [-1.  0.]
+episode 40/50 rewards: [-0.8  0.4]
+Trajectory generation finished
+Creating fragment pairs
+Fragmentation done
+Gathering preferences
+Gathering over
+Preferences gathered:  [0.  0.5 0.5 1.  0.5 0.  0.5 0.5 0.5 0.  0.5 0.5 0.  0.  0.  1.  1.  1.
+ 1.  1.  0.  0.  0.5 0.  1. ]
+Dataset now contains 200 comparisons
+Training reward model
+Epoch [1/10]                     Loss: 0.2184
+Current reward coefficients:  [-1.31829035  6.54941238  0.3015773  -0.3015773   0.8969773  -1.01636325]
+Reward training finished
+Training agent
+Training started
+episode 0/100 rewards: [-1.  0.]
+Success rate:  [1. 0. 0.]
+episode 10/100 rewards: [ 0.3 -1. ]
+Success rate:  [1. 0. 0.]
+episode 20/100 rewards: [-1.  0.]
+Success rate:  [1.         0.         0.00922745]
+episode 30/100 rewards: [ 0.2 -0.7]
+Success rate:  [1.         0.         0.01785504]
+episode 40/100 rewards: [ 0.3 -1. ]
+Success rate:  [1.         0.         0.02556258]
+episode 50/100 rewards: [-1.  0.]
+Success rate:  [1.         0.         0.03301834]
+episode 60/100 rewards: [ 0.3 -1. ]
+Success rate:  [1.         0.         0.02986119]
+episode 70/100 rewards: [-0.3 -0.2]
+Success rate:  [1.         0.         0.03651583]
+episode 80/100 rewards: [-1.  0.]
+Success rate:  [1.        0.        0.0519547]
+episode 90/100 rewards: [-1.  0.]
+Success rate:  [1.         0.         0.06591733]
+Training finished

@@ -36,8 +36,7 @@ def create_gym(config):
               maxs = [9,6])
     return gym
 
-def load_agent(file,gym,explore=False):
-    
+def load_agent(file,gym,explore=False):   
     with open(file, "rb") as input_file:
         agent  = pickle.load(input_file)
     if not explore:

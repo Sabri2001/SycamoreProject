@@ -7,12 +7,9 @@ Created on Wed Oct 12 13:12:51 2022
 
 from matplotlib import pyplot as plt
 from matplotlib.patches import Polygon,Circle,FancyArrowPatch,Rectangle
-
 import numpy as np
-
 from discrete_blocks import discrete_block as Block
 from discrete_blocks import Grid, Graph,FullGraph
-
 from matplotlib import animation
 from IPython.display import HTML
 from physics_scipy import side2corners,get_cm
@@ -23,9 +20,7 @@ base = np.array([[1,0.5],[0,s3/2]])
 force_colors = plt.cm.summer(np.linspace(0,0.5,5))
 force_colors = force_colors[[0,2,4,1,3]]
 
-
 robot_colors = plt.cm.Wistia(np.linspace(0.2,1,4))
-
 
 
 def draw_grid(maxs,label_points=False,steps=1,color='darkslategrey',h=6,w=None,linewidth=1):
@@ -67,6 +62,7 @@ def draw_grid(maxs,label_points=False,steps=1,color='darkslategrey',h=6,w=None,l
     ax.axis('off')
     # ax.set_yticklabels(np.arange(-xlim[0],np.floor((ylim[1]-ylim[0])/np.sqrt(3))-xlim[0]+1))
     return fig,ax
+
 def draw_action(ax,rid,action,blocktype,animated=False,multi=False,**action_args):
     action_args['rid']=rid
     if action in  ['Ph','P']:
@@ -82,6 +78,7 @@ def draw_action(ax,rid,action,blocktype,animated=False,multi=False,**action_args
     elif action == 'S':
         art= draw_stay(ax,**action_args,animated = animated,multi=multi)
     return art
+
 def draw_action_rel(ax,rid,action,blocktype,grid,animated=False,multi=False,**action_args):
     action_args['rid']=rid
     if action in  ['Ph','P']:
@@ -103,6 +100,7 @@ def draw_action_rel(ax,rid,action,blocktype,grid,animated=False,multi=False,**ac
     elif action == 'S':
         art= draw_stay(ax,**action_args,animated = animated,multi=multi)
     return art
+
 def draw_put_rel(ax,
                  blocktype,
                  rid,
@@ -144,6 +142,7 @@ def draw_put_rel(ax,
                 for side in sides:
                     arts+= draw_side(ax, side,color='k',linewidth=0.5,animated=animated)
     return arts
+
 def draw_put(ax,blocktype,rid,hold,pos,ori,blocktypeid,animated=False,multi=False):
     arts = draw_block(ax, blocktype, pos, ori, color=robot_colors[rid],animated=animated)
     if hold:
@@ -163,6 +162,7 @@ def draw_hold(ax,rid,bid=None,pos=None,ori=None,animated=False,multi=False):
         art = ax.text(0,ax.get_ylim()[1]-1,f"Robot {rid} tried to grab block {bid}",color = robot_colors[rid],animated=animated)
         arts = [art]
     return arts
+
 def draw_remove(ax,rid,bid=None, pos=None,ori=None,animated=False,multi=False):
     if bid is None:
         arts = fill_triangle(ax, pos+ori%2, color='k',animated=animated)
@@ -178,18 +178,21 @@ def draw_remove(ax,rid,bid=None, pos=None,ori=None,animated=False,multi=False):
             art = ax.text(0,ax.get_ylim()[1]-1,f"Robot {rid} tried to remove block {bid}",color = robot_colors[rid],animated=animated)
         arts = [art]
     return arts
+
 def draw_leave(ax,rid,animated=False,multi=False):
     if multi:
         art = ax.text(0,ax.get_ylim()[1]-1-rid,f"Robot {rid} tried to leave",color = robot_colors[rid],animated=animated)
     else:
         art = ax.text(0,ax.get_ylim()[1]-1,f"Robot {rid} tried to leave",color = robot_colors[rid],animated=animated)
     return [art]
+
 def draw_stay(ax,rid,animated=False,multi=False):
     if multi:
         art = ax.text(0,ax.get_ylim()[1]-1-rid,f"Robot {rid} stayed in placed",color = robot_colors[rid],animated=animated)
     else:
         art = ax.text(0,ax.get_ylim()[1]-1,f"Robot {rid} stayed in placed",color = robot_colors[rid],animated=animated)
     return [art]
+
 def rad(alpha):
     return alpha*180/np.pi
 
@@ -210,6 +213,7 @@ def fill_triangle(ax,coord,animated=False,text=None,fontsize = 7,**colorkw):
                 fontsize=fontsize) for i in range(coord.shape[0])]
     [ax.add_artist(a) for a in art]
     return art
+
 def draw_side(ax,coord,color=None,animated=False,linewidth=2,zorder=None,alpha=None):
     if coord[3]==0:
         p1 = coord[:2]
@@ -233,6 +237,7 @@ def draw_side(ax,coord,color=None,animated=False,linewidth=2,zorder=None,alpha=N
     #art += [ax.scatter(corners[0,:,0],corners[0,:,1],color=color)]
     
     return art
+
 def draw_forces(ax,grid,force_bag,bids=None,rids = None, uniform_scale=1/12,max_norm=0.4,animated=False,solve=True,max_length=1):
     # force_colors = np.array([[0.,0.5,0.],
     #                          [0.1,0.6,0.1],
@@ -397,6 +402,7 @@ def draw_forces(ax,grid,force_bag,bids=None,rids = None, uniform_scale=1/12,max_
                 
     #[ax.add_artist(a) for a in arts]
     return arts
+
 def add_graph(ax,graph,animated=False,connectivity = 'sparse'):
     arts = []
     if connectivity == 'sparse':
@@ -437,6 +443,7 @@ def add_graph(ax,graph,animated=False,connectivity = 'sparse'):
     
     [ax.add_artist(a) for a in arts]
     return arts
+
 def write_state_OD(grid,h,linewidth = 0.5,alpha=0.5,scale=None):
     fig,axs = plt.subplots(1,3,figsize=(3*h*((grid.shape[0]+grid.shape[1]*0.5+0.5)/((grid.shape[1])*s3/2+1)-0.3),h))
     xlim = [-0.5,grid.shape[0]+0.5*(grid.shape[1])]
@@ -485,6 +492,7 @@ def write_state_OD(grid,h,linewidth = 0.5,alpha=0.5,scale=None):
                 fill_triangle(ax, coords.T,color=plt.cm.Set3((i)),alpha=alpha,text=str(i),fontsize=h*4)
         
         # ax.set_yticklabels(np.arange(-xlim[0],np.floor((ylim[1]-ylim[0])/np.sqrt(3))-xlim[0]+1))
+
 def write_state_OI(grid,h,linewidth = 0.5,alpha=0.5,scale=None):
     fig,axs = plt.subplots(3,3,figsize=(h*((grid.shape[0]+grid.shape[1]*0.5+0.5)/((grid.shape[1])*s3/2+1)-0.3),h))
     axs = np.ravel(axs)
@@ -640,10 +648,11 @@ def fill_grid(ax,
     if forces_bag is not None and draw_arrows:
         arts+=draw_forces(ax,grid,forces_bag,uniform_scale=None,solve=False,animated=animated)
     return arts
+
 def animate(fig,arts_list,sperframe= 0.1):
     ani = animation.ArtistAnimation(fig, arts_list, interval=sperframe*1000, blit=True)
-    #HTML(ani.to_jshtml())
     return ani
+
 def draw_block(ax,block, pos=None,ori=None,draw_neigh=False,highlight_ref = False,animated=False, **colorkw):
     if ori is not None:
         block.turn(ori)
@@ -656,6 +665,7 @@ def draw_block(ax,block, pos=None,ori=None,draw_neigh=False,highlight_ref = Fals
         for i,s in enumerate(block.neigh):
             arts+=draw_side(ax,s,color=plt.cm.turbo(i/block.neigh.shape[0]),animated=animated)
     return arts
+
 def draw_robot(ax,grid,robotid,base=None,animated=False,max_dist = 15,right=True,dash=None,actuator_pos=None):
     if base is None:
         if max_dist is None:
@@ -712,6 +722,7 @@ def save_anim(ani,name='animation',ext = 'html'):
     elif ext == 'gif':
         writergif = animation.PillowWriter(fps=3) 
         ani.save(f"{name}.gif", writer=writergif)
+
 
 if __name__ == "__main__":
     print("Start test")

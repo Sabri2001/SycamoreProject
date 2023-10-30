@@ -6,14 +6,14 @@ import wandb
 import numpy as np
 import pickle
 from discrete_blocks import discrete_block as Block
-from relative_single_agent import SACSupervisorSparse,generous_reward,punitive_reward,modular_reward
+from relative_single_agent import SACSupervisorSparse
 from discrete_simulator import DiscreteSimulator as Sim, Transition
 import discrete_graphics as gr
 
 from single_agent_gym import ReplayDiscreteGymSupervisor
 from rlhf_reward_model import RewardLinear
-from rlhf_fragmenter import RandomFragmenter
-from rlhf_preference_gatherer import SyntheticPreferenceGatherer
+from rlhf_pair_generator import RandomPairGenerator
+from rlhf_preference_gatherer import SyntheticPreferenceGatherer, HumanPreferenceGatherer
 from rlhf_preference_model import PreferenceModel
 from rlhf_reward_trainer import LinearRewardTrainer
 from rlhf_preference_comparisons import PreferenceComparisons
@@ -21,6 +21,7 @@ from rlhf_preference_comparisons import PreferenceComparisons
 
 # CONSTANTS
 USE_WANDB = False
+HUMAN_FEEDBACK = False
 # %env "WANDB_NOTEBOOK_NAME" "rlhf_main.ipynb"
 
 # blocks
@@ -28,7 +29,6 @@ hexagon = Block([[1,0,0],[1,1,1],[1,1,0],[0,2,1],[0,1,0],[0,1,1]],muc=0.5)
 linkr = Block([[0,0,0],[0,1,1],[1,0,0],[1,0,1],[1,1,1],[0,1,0]],muc=0.5) 
 linkl = Block([[0,0,0],[0,1,1],[1,0,0],[0,1,0],[0,0,1],[-1,1,1]],muc=0.5) 
 linkh = Block([[0,0,0],[0,1,1],[1,0,0],[-1,2,1],[0,1,0],[0,2,1]],muc=0.5)
-#target = Block([[0,0,1],[1,0,1]])
 target = Block([[0,0,1]])
 
 # config
@@ -91,19 +91,22 @@ gym = ReplayDiscreteGymSupervisor(config,
 # Create Reward Model
 reward_model = RewardLinear()
 
-# Create Fragmenter
-fragmenter = RandomFragmenter()
+# Create Pair Generator
+pair_generator = RandomPairGenerator()
 
 # Create Preference Gatherer (human/synthetic)
-coeff = np.array([
-            config['reward_action']['Ph'],
-            config['reward_closer'],
-            config['reward_success'],
-            config['reward_failure'],
-            config['reward_nsides'],
-            config['reward_opposite_sides']
-            ])
-gatherer = SyntheticPreferenceGatherer(coeff)
+if HUMAN_FEEDBACK:
+    gatherer = HumanPreferenceGatherer()
+else:
+    coeff = np.array([
+                config['reward_action']['Ph'],
+                config['reward_closer'],
+                config['reward_success'],
+                config['reward_failure'],
+                config['reward_nsides'],
+                config['reward_opposite_sides']
+                ])
+    gatherer = SyntheticPreferenceGatherer(coeff)
 
 # Create Preference Model
 preference_model = PreferenceModel(reward_model)
@@ -112,21 +115,33 @@ preference_model = PreferenceModel(reward_model)
 reward_trainer = LinearRewardTrainer(preference_model)
 
 # Create Preference Comparisons, the main interface
+if HUMAN_FEEDBACK:
+    draw_freq = 1
+else:
+    draw_freq = 100
+
 pref_comparisons = PreferenceComparisons(
     gym,
     reward_model,
     num_iterations=5,  # Set to 60 for better performance
-    fragmenter=fragmenter,
+    pair_generator=pair_generator,
     preference_gatherer=gatherer,
     reward_trainer=reward_trainer,
     transition_oversampling=1,
     initial_comparison_frac=0.1,
     initial_epoch_multiplier=4,
     query_schedule="hyperbolic",
+    draw_freq=draw_freq 
 )
 
-# TRAIN
+# TRAIN REWARD
 pref_comparisons.train(
     total_timesteps=5_000,
     total_comparisons=200,
 )
+
+# TRAIN AGENT ON LEARNED REWARD
+# TODO
+
+# EVALUATE AGENT
+# TODO

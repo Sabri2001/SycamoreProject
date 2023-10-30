@@ -24,7 +24,7 @@ class RewardTrainer():
         self.preference_model = preference_model
 
     def train(self, dataset: PreferenceDataset, epoch_multiplier: float = 1.0) -> None:
-        """Train the reward model on a batch of fragment pairs and preferences.
+        """Train the reward model on a batch of trajectory pairs and preferences.
 
         Args:
             dataset: the dataset of preference comparisons to train on.
@@ -49,7 +49,7 @@ class LinearRewardTrainer(RewardTrainer):
         self.preference_model = preference_model
 
     def train(self, dataset, epoch_multiplier = 1., learning_rate = 0.08):
-        """Train the reward model on a batch of fragment pairs and preferences.
+        """Train the reward model on a batch of trajectory pairs and preferences.
 
         Args:
             dataset: the dataset of preference comparisons to train on.
@@ -81,10 +81,12 @@ class LinearRewardTrainer(RewardTrainer):
                     - proba_traj1*(1-proba_traj1)*features_traj1
                         )
 
-                self.preference_model.reward_model.coefficients -= learning_rate * gradient
+                self.preference_model.reward_model.coeff -= learning_rate * gradient
 
             # Print the average loss for this epoch
             if epoch%10 == 0:
                 average_loss = total_loss/ len(dataset)
                 print(f"Epoch [{epoch + 1}/{num_epochs}] \
                     Loss: {average_loss:.4f}")
+                
+        print("Current reward coefficients: ", self.preference_model.reward_model.coeff)

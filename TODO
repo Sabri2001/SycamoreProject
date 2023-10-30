@@ -1,0 +1,13 @@
+Needed
+- training/eval
+- logs (instead of prints)
+- organise modules/classes
+- getters/setters
+- use nn module for linear reward model
+- implement human feedback
+- save pref dataset
+
+
+Alright:
+(- remove unnecessary code from Gabriel)
+(- local variables in funs)

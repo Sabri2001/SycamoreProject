@@ -35,15 +35,18 @@ class RewardLinear(RewardModel):
 
     def __init__(
         self,
-        coefficients = None
+        coeff = None
     ):
         """
         Initialize the Linear Reward Model.
         """
-        if coefficients == None:
-            self.coefficients = np.array([0.,0.,0.,0.,0.,0.])
+        if coeff== None:
+            self.coeff = np.array([0.,0.,0.,0.,0.,0.])
         else:
-            self.coefficients = coefficients
+            self.coeff = coeff
+
+    def get_coeff(self):
+        return self.coeff
 
     def forward(
         self,
@@ -59,7 +62,7 @@ class RewardLinear(RewardModel):
         self,
         transition
     ):
-        return np.dot(self.coefficients, transition.reward_features)
+        return np.dot(self.get_coeff(), transition.reward_features)
 
 
 class RewardNet(nn.Module, abc.ABC, RewardModel):

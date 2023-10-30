@@ -37,6 +37,7 @@ class Transition():
 class Trajectory():
     def __init__(self):
         self.transitions = []
+        self.animation = None
 
     def add_transition(self, transition):
         if isinstance(transition, Transition):
@@ -52,6 +53,12 @@ class Trajectory():
         for transition in self.get_transitions():
             sum += transition.get_reward_features()
         return sum
+
+    def set_animation(self, animation):
+        self.animation = animation
+
+    def get_animation(self):
+        return self.animation
 
     def __str__(self):
         return f"Trajectory with {len(self.transitions)} transitions"
@@ -95,16 +102,18 @@ class DiscreteSimulator():
         self.nbid=1
         self.ninterface = 1
         self.prev = None
+    
     def setup_anim(self,h=6):
         plt.close('all')
         self.frames = []
-        #self.fig,self.ax = gr.draw_grid(self.grid.occ.shape[:2],color='none',h=h)
-        self.fig,self.ax = gr.draw_grid([30,12],color='none',h=h)
+        self.fig, self.ax = gr.draw_grid([30,12],color='none',h=h)
+    
     def add_ground(self,block,pos,ground_type=0):
         valid,_,_=self.grid.put(block,pos,0,floating=True)
         assert valid, "Invalid target placement"
         self.type_id[self.graph.n_ground]=-ground_type-1
         self.graph.add_ground(get_cm(block.parts),ground_type=ground_type)
+    
     def put(self,block,pos,blocktypeid=None):
         if self.nbid == self.max_block:
             return False, None
@@ -126,6 +135,7 @@ class DiscreteSimulator():
             self.nbid+=1
 
         return valid,closer, interfaces
+    
     def put_rel(self,block,idsideblock,idsidesup,idblocksup,side_ori,blocktypeid=None,idconsup=None):
         if self.nbid == self.max_block:
             return False, None, None
@@ -148,6 +158,7 @@ class DiscreteSimulator():
             self.type_id[self.graph.n_reg+self.nbid-1]=blocktypeid
             self.nbid+=1
         return valid,closer,interfaces
+    
     def remove(self,bid,save=True):
         if bid < 1 or  bid >=self.nbid:
             #cannot remove the ground or a block already put way before
@@ -165,6 +176,7 @@ class DiscreteSimulator():
         self.graph.remove(bid)
         self.ph_mod.remove_block(bid)
         return True
+    
     def remove_loc(self,pos,ori):
         bid = self.grid.occ[pos[0],pos[1],ori%2]
         if bid < 0:
@@ -175,12 +187,15 @@ class DiscreteSimulator():
         self.grid.remove(bid)
         self.ph_mod.remove_block(bid)
         return True
+    
     def save(self):
         self.prev = (copy.deepcopy(self.grid),copy.deepcopy(self.ph_mod),self.nbid)
+    
     def undo(self):
         assert self.prev is not None, "no state was saved"
         self.grid,self.ph_mod,self.nbid = self.prev
         self.prev = None
+    
     def leave(self,rid, verbose=False):
         bid = np.unique(self.grid.occ[self.grid.hold==rid])
         if len(bid)==0:
@@ -195,6 +210,7 @@ class DiscreteSimulator():
                     print(f"To allow r_{rid} to leave, the other robot(s) need to apply:")
                     self.get_force(idr)
         return bid
+    
     def hold(self,rid,bid,hold_pos_rel=[0,0]):
         '''hold the block bid'''
         if bid is None:
@@ -217,17 +233,20 @@ class DiscreteSimulator():
             return False
         self.grid.hold[self.grid.occ==bid]=rid
         return True
+    
     def check(self):
         res = self.ph_mod.solve()
         if res.status not in [0,2]:
             print("warning: error in the static solver. "+res.message)
         return res.status == 0
+    
     def add_frame(self,draw_robots=False):
         '''add a frame to later animate the simulation'''
         self.frames.append(gr.fill_grid(self.ax, self.grid,animated=True,draw_hold=False,forces_bag=self.ph_mod))
         if draw_robots:
             for i in range(self.graph.n_robot):
                 self.frames[-1]+=gr.draw_robot(self.ax, self.grid, i)
+    
     def draw_act(self,rid,action,blocktype,prev_state=None,redraw_state=True,draw_robots=False,**action_params):
         if redraw_state:
             if prev_state is not None:
@@ -261,18 +280,22 @@ class DiscreteSimulator():
                 self.frames[-1] += gr.draw_action_rel(self.ax,rid,action,blocktype,prev_state[rid]['grid'],animated=True,multi=True,**action_params)
             else:
                 self.frames[-1] +=gr.draw_action(self.ax,rid,action,blocktype,animated=True,multi=True,**action_params)
+    
     def get_force(self,r_id):
         
         self.ph_mod.solve()
         force = self.ph_mod.last_res.x[r_id*6:(r_id+1)*6:2]-self.ph_mod.last_res.x[r_id*6+1:(r_id+1)*6:2]
         print(f"{r_id=}, f_x={force[0]}, f_y={force[1]}")
+    
     def animate(self):
         anim = gr.animate(self.fig, self.frames)
         return anim
+    
     def reset(self):
         '''remove all blocks from the sim'''
         self.grid.reset()
         self.ph_mod.reset()
+    
     def draw_state_debug(self):
         fig,ax = gr.draw_grid(self.grid.occ.shape[:2],color='none',h=12)
         gr.fill_grid(ax, self.grid)

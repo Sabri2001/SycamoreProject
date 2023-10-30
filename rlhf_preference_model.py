@@ -29,7 +29,7 @@ class PreferenceModel():
         trajectory_pair
     ):
         """
-        Computes the preference probability of the first fragment for all pairs, 
+        Computes the preference probability of the first trajectory for all pairs, 
         using softmax.
 
         Args:
@@ -50,8 +50,8 @@ class PreferenceModel():
         """Computes the Boltzmann rational probability the first trajectory is best.
 
         Args:
-            rews1: scalar reward for the first trajectory fragment.
-            rews2: scalar reward for the second trajectory fragment.
+            rews1: scalar reward for the first trajectory.
+            rews2: scalar reward for the second trajectory.
 
         Returns:
             The softmax of the difference between the return of the

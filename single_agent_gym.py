@@ -284,11 +284,10 @@ class ReplayDiscreteGymSupervisor():
 
                 # Drawing and terminations
                 if draw:
-                    action_args.pop('rid')
-                    
+                    action_args.pop('rid')                   
                     self.sim.draw_act(idr,action,blocktype,prev_state,**action_args)
                     self.sim.add_frame()
-                            
+          
                 if success or failure:
                     break
             if success or failure:
@@ -299,10 +298,17 @@ class ReplayDiscreteGymSupervisor():
         else:
             anim = None
 
-        # Return dependent on mode (training/trajectory generation)
+        # NOTE: when implementing human fb, might have to replace block above by this one
+        # if draw:
+        #     anim = self.sim.frames
+        # else:
+        #     anim = None
+
+        # Return depends on mode (training/trajectory generation)
         if train:
             return rewards_ar,step,anim,transition_buffer,transition_buffer_count,success,gap
         else:
+            trajectory.set_animation(anim)
             trajectory_buffer[trajectory_buffer_count] = trajectory
             trajectory_buffer_count += 1
             return rewards_ar,step,anim,trajectory_buffer,trajectory_buffer_count,success,gap
@@ -347,7 +353,7 @@ class ReplayDiscreteGymSupervisor():
             (rewards_ep, _,
              anim, transition_buffer, 
              buffer_count, success, gap) = self.episode_restart(max_steps,
-                                                              draw = episode % draw_freq == 0,#draw_freq-1,
+                                                              draw = episode % draw_freq == 0, #draw_freq-1,
                                                               transition_buffer=transition_buffer,
                                                               transition_buffer_count=buffer_count,
                                                               auto_leave=True
@@ -389,7 +395,7 @@ class ReplayDiscreteGymSupervisor():
                         
                 else:
                     #gr.save_anim(anim,os.path.join(log_dir,'files','media', f"episode {episode}"),ext='gif')
-                    gr.save_anim(anim,os.path.join(log_dir, f"episode {episode}"),ext='html')
+                    gr.save_anim(anim,os.path.join(log_dir, f"episode {episode}"), ext='html')
                 
         if self.use_wandb:
             self.run.finish()
@@ -434,7 +440,7 @@ class ReplayDiscreteGymSupervisor():
         for episode in range(nb_traj):
             # run an episode
             (rewards_ep, _,
-             anim, trajectory_buffer, 
+             _, trajectory_buffer, 
              buffer_count, success, gap) = self.episode_restart(max_steps,
                                                               draw = episode % draw_freq == 0,#draw_freq-1,
                                                               trajectory_buffer=trajectory_buffer,
@@ -467,19 +473,6 @@ class ReplayDiscreteGymSupervisor():
                 else:
                     wandb.log({'succes_rate':success_rate})
 
-            # save anim
-            if anim is not None:
-                if self.use_wandb:
-                    if success:
-                        wandb.log({f'success_animation_gap_{gap}':wandb.Html(anim.to_jshtml())})
-                        gr.save_anim(anim,os.path.join(log_dir, f"success_animation_gap_{i}_ep{episode}"),ext='gif')
-                    else:
-                        wandb.log({'animation':wandb.Html(anim.to_jshtml())})
-                        
-                else:
-                    #gr.save_anim(anim,os.path.join(log_dir,'files','media', f"episode {episode}"),ext='gif')
-                    gr.save_anim(anim,os.path.join(log_dir, f"episode {episode}"),ext='html')
-                
         if self.use_wandb:
             self.run.finish()
 
@@ -600,19 +593,6 @@ class ReplayDiscreteGymSupervisor():
         print(f"Time used to draw the animation: {time_draw}")
         return rewards_ar, anim
         
-    def sample_trajectories(self, nb_trajectories):
-        # Get the indices of trajectories to sample
-        if nb_trajectories > len(self.trajectory_buffer):
-            raise ValueError("nb_trajectories exceeds the number of stored trajectories.")
-
-        # Sample with replacement (NOTE: or without???)
-        sampled_indices = np.random.choice(len(self.trajectory_buffer), size=nb_trajectories, replace=True)
-
-        # Extract the sampled trajectories
-        sampled_trajectories = [self.trajectory_buffer[i] for i in sampled_indices]
-
-        return sampled_trajectories
-
     def test(self,
              draw=True):
         from relative_single_agent import int2act_norot
