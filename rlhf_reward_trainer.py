@@ -39,14 +39,17 @@ class LinearRewardTrainer(RewardTrainer):
 
     def __init__(
         self,
-        preference_model: PreferenceModel
+        preference_model: PreferenceModel,
+        gamma
     ):
         """Initialize the reward trainer.
 
         Args:
             preference_model: the preference model to train the reward network.
+            gamma: discount factor
         """
         self.preference_model = preference_model
+        self.gamma = gamma
 
     def train(self, dataset, epoch_multiplier = 1., learning_rate = 0.08):
         """Train the reward model on a batch of trajectory pairs and preferences.
@@ -71,8 +74,8 @@ class LinearRewardTrainer(RewardTrainer):
                 total_loss -= pref_traj1*np.log(proba_traj1) + (1-pref_traj1)*np.log(1-proba_traj1)
 
                 # Compute the gradient and update the coefficients
-                features_traj1 = trajectory_pair[0].sum_reward_features()
-                features_traj2 = trajectory_pair[1].sum_reward_features()
+                features_traj1 = trajectory_pair[0].rollout_reward_features(self.gamma)
+                features_traj2 = trajectory_pair[1].rollout_reward_features(self.gamma)
                 gradient = -pref_traj1*( \
                     proba_traj1*(1-proba_traj1)*features_traj1 \
                     - proba_traj1*(1-proba_traj1)*features_traj2) \

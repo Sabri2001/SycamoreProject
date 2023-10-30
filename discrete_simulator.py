@@ -48,10 +48,11 @@ class Trajectory():
     def get_transitions(self):
         return self.transitions
 
-    def sum_reward_features(self):
+    def rollout_reward_features(self, gamma):
         sum = np.array([0.,0.,0.,0.,0.,0.])
-        for transition in self.get_transitions():
-            sum += transition.get_reward_features()
+        for i, transition in enumerate(self.get_transitions()):
+            transition_rewards = transition.get_reward_features()
+            sum += [gamma**i * transition_rewards[j] for j in range(len(transition_rewards))]
         return sum
 
     def set_animation(self, animation):

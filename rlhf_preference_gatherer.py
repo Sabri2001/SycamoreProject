@@ -34,8 +34,9 @@ class PreferenceGatherer(abc.ABC):
 
 
 class SyntheticPreferenceGatherer(PreferenceGatherer):
-    def __init__(self, coeff):
+    def __init__(self, coeff, gamma):
         self.coeff = coeff
+        self.gamma = gamma
 
     def __call__(self, trajectory_pairs):
         """
@@ -75,8 +76,8 @@ class SyntheticPreferenceGatherer(PreferenceGatherer):
     def reward_trajectory(self, trajectory):
         """Compute reward for a trajectory."""
         reward = 0
-        for transition in trajectory:
-            reward += self.reward_transition(transition)
+        for i, transition in enumerate(trajectory):
+            reward += self.gamma**i * self.reward_transition(transition)
         return reward
     
     def reward_transition(self, transition):

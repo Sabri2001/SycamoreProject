@@ -89,7 +89,8 @@ gym = ReplayDiscreteGymSupervisor(config,
               maxs = [9,6]) # grid size
 
 # Create Reward Model
-reward_model = RewardLinear()
+gamma = 1-config['agent_discount_f']
+reward_model = RewardLinear(gamma)
 
 # Create Pair Generator
 pair_generator = RandomPairGenerator()
@@ -106,13 +107,13 @@ else:
                 config['reward_nsides'],
                 config['reward_opposite_sides']
                 ])
-    gatherer = SyntheticPreferenceGatherer(coeff)
+    gatherer = SyntheticPreferenceGatherer(coeff, gamma)
 
 # Create Preference Model
 preference_model = PreferenceModel(reward_model)
 
 # Create Reward Trainer
-reward_trainer = LinearRewardTrainer(preference_model)
+reward_trainer = LinearRewardTrainer(preference_model, gamma)
 
 # Create Preference Comparisons, the main interface
 if HUMAN_FEEDBACK:
@@ -135,13 +136,20 @@ pref_comparisons = PreferenceComparisons(
 )
 
 # TRAIN REWARD
+print("REWARD TRAINING STARTED")
 pref_comparisons.train(
-    total_timesteps=5_000,
-    total_comparisons=200,
+    total_timesteps=1000,
+    total_comparisons=50,
 )
+print("REWARD TRAINING ENDED \n \n")
 
 # TRAIN AGENT ON LEARNED REWARD
-# TODO
+print("AGENT TRAINING ON LEARNED REWARD STARTED")
+pref_comparisons.gym.training(nb_episodes=100)
+print("AGENT TRAINING ON LEARNED REWARD ENDED \n \n")
 
 # EVALUATE AGENT
-# TODO
+print("AGENT EVALUATION STARTED")
+success_rate = pref_comparisons.gym.evaluate_agent(nb_trials=50)
+print("Average success rate: ", success_rate)
+print("AGENT EVALUATION ENDED")

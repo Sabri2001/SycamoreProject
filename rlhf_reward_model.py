@@ -7,7 +7,6 @@ from typing import (
     Tuple,
     Iterable
 )
-from discrete_simulator import Transition, Trajectory
 
 
 class RewardModel():
@@ -35,11 +34,13 @@ class RewardLinear(RewardModel):
 
     def __init__(
         self,
+        gamma,
         coeff = None
     ):
         """
         Initialize the Linear Reward Model.
         """
+        self.gamma = gamma
         if coeff== None:
             self.coeff = np.array([0.,0.,0.,0.,0.,0.])
         else:
@@ -54,8 +55,8 @@ class RewardLinear(RewardModel):
     ):
         """Compute reward for a trajectory."""
         reward = 0
-        for transition in trajectory:
-            reward += self.reward_transition(transition)
+        for i, transition in enumerate(trajectory):
+            reward += self.gamma**i * self.reward_transition(transition)
         return reward
     
     def reward_transition(

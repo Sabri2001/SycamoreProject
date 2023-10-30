@@ -1,4 +1,2 @@
-! kubectl exec -ti pytorch-pod -- python
-
-import torch
-print(torch.cuda.is_available())
+ls = [1., 1. ,1.]
+print([ls[i]*2 for i in range(len(ls))])
