@@ -49,7 +49,8 @@ class ReplayDiscreteGymSupervisor():
                  max_interfaces = 100,
                  log_freq = 100,
                  reward_function = None,
-                 use_wandb=False
+                 use_wandb=False,
+                 logger = None
             ):
         
         # wandb init
@@ -61,6 +62,9 @@ class ReplayDiscreteGymSupervisor():
             self.use_wandb = False
             self.config = config
 
+        # logger init
+        self.logger = logger
+        
         # ranges (blocks)
         if ranges is None:
             ranges = np.ones((n_robots,maxs[0],maxs[1],2),dtype = bool)
@@ -258,8 +262,7 @@ class ReplayDiscreteGymSupervisor():
                 reward_features = [int(bool(action)), int(closer), int(success), \
                                    int(failure), np.sum(n_sides), \
                                     int(not np.all(np.logical_xor(n_sides[:3],n_sides[3:])))]
-
-                
+       
                 # Add reward to reward array (robot,step)
                 rewards_ar[idr,step]=reward
                 if self.agent.rep == 'graph':
@@ -315,10 +318,11 @@ class ReplayDiscreteGymSupervisor():
     
     def training(self,
                 pfreq = 10,
-                draw_freq=100,
+                draw_freq=100, # leave this one, useful later
                 max_steps=100,
                 success_rate_decay = 0.01,
                 nb_episodes = 100,
+                use_wandb = False,
                 log_dir=None):
         """
         Initialises buffer, and repeatedly (train_n_episodes times) 
@@ -331,14 +335,6 @@ class ReplayDiscreteGymSupervisor():
             res_dict={}
         else:
             success_rate = 0
-
-        # init log
-        if log_dir is None:
-            if self.use_wandb:
-                log_dir = self.run.dir
-            else:
-                log_dir = os.path.join('log','log'+str(np.random.randint(10000000)))
-                os.mkdir(log_dir)
 
         # init transition buffer
         transition_buffer = np.empty(self.config['train_l_buffer'],dtype = object)
@@ -373,9 +369,9 @@ class ReplayDiscreteGymSupervisor():
             
             # log/wandb
             if episode % pfreq==0:
-                print(f'episode {episode}/{nb_episodes} rewards: {np.sum(rewards_ep,axis=1)}')
-                print("Success rate: ", success_rate)
-            if self.use_wandb and episode % self.log_freq == 0:
+                self.logger.info(f'episode {episode}/{nb_episodes} rewards: {np.sum(rewards_ep,axis=1)}')
+                self.logger.info(f"Success rate (gap 2): {success_rate[2]}")
+            if use_wandb and episode % self.log_freq == 0:
                 if self.random_targets == 'random_gap' or self.random_targets == 'random_gap_center':
                     for i in np.arange(self.gap_range[0],self.gap_range[1]):
                         res_dict[f'success_rate_gap{i}']=success_rate[i]
@@ -391,22 +387,16 @@ class ReplayDiscreteGymSupervisor():
                         gr.save_anim(anim,os.path.join(log_dir, f"success_animation_gap_{i}_ep{episode}"),ext='gif')
                     else:
                         wandb.log({'animation':wandb.Html(anim.to_jshtml())})
-                        
-                else:
-                    #gr.save_anim(anim,os.path.join(log_dir,'files','media', f"episode {episode}"),ext='gif')
-                    gr.save_anim(anim,os.path.join(log_dir, f"episode {episode}"), ext='html')
                 
-        if self.use_wandb:
-            self.run.finish()
+        # if use_wandb:
+        #     self.run.finish()
         return anim
     
     def generate_trajectories(self,
                 nb_traj = 100,
-                pfreq = 10,
                 draw_freq=100,
                 max_steps=100,
-                success_rate_decay = 0.01,
-                log_dir=None):
+                success_rate_decay = 0.01):
         """
         Initialises trajectory buffer, and repeatedly (n_episodes) 
         calls episode_restart(train=False) to fill buffer.
@@ -419,14 +409,6 @@ class ReplayDiscreteGymSupervisor():
         else:
             success_rate = 0 # gap_size 1 => scalar
 
-        # init log
-        if log_dir is None:
-            if self.use_wandb:
-                log_dir = self.run.dir
-            else:
-                log_dir = os.path.join('log','log'+str(np.random.randint(10000000)))
-                os.mkdir(log_dir)
-
         # init trajectory buffer
         trajectory_buffer = np.empty(shape=nb_traj, dtype=object)
         buffer_count = 0
@@ -437,7 +419,7 @@ class ReplayDiscreteGymSupervisor():
         # run over several episodes
         for episode in range(nb_traj):
             # run an episode
-            (rewards_ep, _,
+            (_, _,
              _, trajectory_buffer, 
              buffer_count, success, gap) = self.episode_restart(max_steps,
                                                               draw = episode % draw_freq == 0,#draw_freq-1,
@@ -458,30 +440,15 @@ class ReplayDiscreteGymSupervisor():
                 else:
                     success_rate = (1-success_rate_decay)*success_rate
             
-            # log/wandb
-            if episode % pfreq==0:
-                print(f'episode {episode}/{nb_traj} rewards: {np.sum(rewards_ep,axis=1)}')
-            if self.use_wandb and episode % self.log_freq == 0:
-                if self.random_targets == 'random_gap' or self.random_targets == 'random_gap_center':
-                    for i in np.arange(self.gap_range[0],self.gap_range[1]):
-                        res_dict[f'success_rate_gap{i}']=success_rate[i]
-                    wandb.log(res_dict)
-                else:
-                    wandb.log({'succes_rate':success_rate})
-
-        if self.use_wandb:
-            self.run.finish()
-
         print("Trajectory generation finished")
-        return trajectory_buffer
+        return trajectory_buffer, success_rate[2]
 
     def evaluate_agent(self,
                 nb_trials = 100,
-                pfreq = 10,
                 draw_freq=100,
                 max_steps=100,
-                success_rate_decay = 0.01,
-                log_dir=None):
+                success_rate_decay = 0.01
+                ):
         """
         Evaluates agent's current policy.
         """
@@ -493,14 +460,6 @@ class ReplayDiscreteGymSupervisor():
         else:
             success_rate = 0 # gap_size 1 => scalar
 
-        # init log
-        if log_dir is None:
-            if self.use_wandb:
-                log_dir = self.run.dir
-            else:
-                log_dir = os.path.join('log','log'+str(np.random.randint(10000000)))
-                os.mkdir(log_dir)
-
         # init trajectory buffer
         trajectory_buffer = np.empty(shape=nb_trials, dtype=object)
         buffer_count = 0
@@ -511,7 +470,7 @@ class ReplayDiscreteGymSupervisor():
         # run over several episodes
         for episode in range(nb_trials):
             # run an episode
-            (rewards_ep, _,
+            (_, _,
              _, trajectory_buffer, 
              buffer_count, success, gap) = self.episode_restart(max_steps,
                                                               draw = episode % draw_freq == 0,#draw_freq-1,
@@ -531,21 +490,7 @@ class ReplayDiscreteGymSupervisor():
                     success_rate = (1-success_rate_decay)*success_rate +success_rate_decay
                 else:
                     success_rate = (1-success_rate_decay)*success_rate
-            
-            # log/wandb
-            if episode % pfreq==0:
-                print(f'episode {episode}/{nb_trials} rewards: {np.sum(rewards_ep,axis=1)}')
-            if self.use_wandb and episode % self.log_freq == 0:
-                if self.random_targets == 'random_gap' or self.random_targets == 'random_gap_center':
-                    for i in np.arange(self.gap_range[0],self.gap_range[1]):
-                        res_dict[f'success_rate_gap{i}']=success_rate[i]
-                    wandb.log(res_dict)
-                else:
-                    wandb.log({'succes_rate':success_rate})
-
-        if self.use_wandb:
-            self.run.finish()
-
+        
         print("Agent evaluation finished")
         return success_rate[2] # success_rate of gap 2
 

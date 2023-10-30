@@ -1,14 +1,12 @@
 # IMPORTS
-import copy
-import time
-import os
-import wandb
 import numpy as np
-import pickle
 from discrete_blocks import discrete_block as Block
 from relative_single_agent import SACSupervisorSparse
-from discrete_simulator import DiscreteSimulator as Sim, Transition
-import discrete_graphics as gr
+import logging
+import datetime
+import os
+import sys
+import wandb
 
 from single_agent_gym import ReplayDiscreteGymSupervisor
 from rlhf_reward_model import RewardLinear
@@ -20,9 +18,46 @@ from rlhf_preference_comparisons import PreferenceComparisons
 
 
 # CONSTANTS
-USE_WANDB = False
+USE_WANDB = True
 HUMAN_FEEDBACK = False
 # %env "WANDB_NOTEBOOK_NAME" "rlhf_main.ipynb"
+
+# Set up logger
+class CustomFileHandler(logging.FileHandler):
+    def __init__(self, filename, mode='a', encoding=None, delay=False):
+        # Generate the log filename with the current day and month
+        today = datetime.datetime.now()
+        log_prefix = today.strftime("%d_%m")
+        
+        # Specify the directory where log files should be saved
+        log_directory = "log"
+        
+        # Ensure the log directory exists
+        if not os.path.exists(log_directory):
+            os.makedirs(log_directory)
+        
+        # Combine the directory, filename, and log_suffix
+        self.filename = os.path.join(log_directory, f"{log_prefix}_{filename}")
+        
+        # Get the log index
+        index = 1
+        while os.path.exists(f"{self.filename}_{index}.log"):
+            index += 1
+        self.filename = f"{self.filename}_{index}.log"
+        
+        super().__init__(self.filename, mode, encoding, delay)
+
+    def get_file_name(self):
+        return self.filename
+
+logger = logging.getLogger(__name__)
+log_name = "human_feedback" if HUMAN_FEEDBACK else "synthetic_feedback"
+file_handler = CustomFileHandler(log_name)
+filename = file_handler.get_file_name()
+logger.addHandler(file_handler)
+stream_handler = logging.StreamHandler(sys.stdout)
+logger.addHandler(stream_handler)
+logger.setLevel(logging.INFO) # Set the logger level
 
 # blocks
 hexagon = Block([[1,0,0],[1,1,1],[1,1,0],[0,2,1],[0,1,0],[0,1,1]],muc=0.5)
@@ -71,12 +106,19 @@ config = {'train_n_episodes':100,
             'gap_range':[2,3]
             }
 
+# Set up wandb
+if USE_WANDB:
+    wandb_project = "sycamore"
+    wandb_entity = "sabri-elamrani"
+    run = wandb.init(project=wandb_project, entity=wandb_entity, name=filename ,config=config)
+    # config = wandb.config
 
+    
 # INIT
 # Create Gym (env + agent)
 gym = ReplayDiscreteGymSupervisor(config,
               agent_type=SACSupervisorSparse,
-              use_wandb=USE_WANDB,
+              use_wandb=False, # wandb set up elsewhere
               actions= ['Ph'], # place-hold only necessary action
               block_type=[hexagon],
               random_targets='random_gap', 
@@ -85,8 +127,10 @@ gym = ReplayDiscreteGymSupervisor(config,
               max_blocks = 10,
               targets=[target]*2,
               max_interfaces = 50,
-              log_freq = 5,
-              maxs = [9,6]) # grid size
+              log_freq = 5, # grid size
+              maxs = [9,6],
+              logger = logger
+              )
 
 # Create Reward Model
 gamma = 1-config['agent_discount_f']
@@ -113,7 +157,7 @@ else:
 preference_model = PreferenceModel(reward_model)
 
 # Create Reward Trainer
-reward_trainer = LinearRewardTrainer(preference_model, gamma)
+reward_trainer = LinearRewardTrainer(preference_model, gamma, logger)
 
 # Create Preference Comparisons, the main interface
 if HUMAN_FEEDBACK:
@@ -132,24 +176,33 @@ pref_comparisons = PreferenceComparisons(
     initial_comparison_frac=0.1,
     initial_epoch_multiplier=4,
     query_schedule="hyperbolic",
-    draw_freq=draw_freq 
+    draw_freq=draw_freq,
+    use_wandb=USE_WANDB,
+    logger = logger
 )
 
 # TRAIN REWARD
-print("REWARD TRAINING STARTED")
+logger.info("#######################")
+logger.info("REWARD TRAINING STARTED")
+logger.info("####################### \n")
 pref_comparisons.train(
-    total_timesteps=1000,
-    total_comparisons=50,
+    total_timesteps=100, # 5000
+    total_comparisons=20, # 200
 )
-print("REWARD TRAINING ENDED \n \n")
+logger.debug("REWARD TRAINING ENDED \n \n")
 
 # TRAIN AGENT ON LEARNED REWARD
-print("AGENT TRAINING ON LEARNED REWARD STARTED")
-pref_comparisons.gym.training(nb_episodes=100)
-print("AGENT TRAINING ON LEARNED REWARD ENDED \n \n")
+logger.info("\n \n ########################################")
+logger.info("AGENT TRAINING ON LEARNED REWARD STARTED")
+logger.info("######################################## \n")
+pref_comparisons.gym.training(nb_episodes=100, use_wandb = USE_WANDB)
+pref_comparisons.run.finish()
+logger.debug("AGENT TRAINING ON LEARNED REWARD ENDED \n \n")
 
 # EVALUATE AGENT
-print("AGENT EVALUATION STARTED")
+logger.info("\n \n ########################")
+logger.info("AGENT EVALUATION STARTED")
+logger.info("######################## \n")
 success_rate = pref_comparisons.gym.evaluate_agent(nb_trials=50)
-print("Average success rate: ", success_rate)
-print("AGENT EVALUATION ENDED")
+logger.info(f"Average success rate (gap 2): {success_rate} \n \n")
+logger.debug("AGENT EVALUATION ENDED")

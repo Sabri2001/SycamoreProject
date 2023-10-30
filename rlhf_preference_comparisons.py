@@ -1,13 +1,12 @@
 from typing import (
     Optional,
     Union,
-    Dict,
-    Callable
+    Dict
 )
 import numpy as np
-import math
 from stable_baselines3.common import type_aliases
 from imitation.util import util
+import wandb
 
 from rlhf_reward_model import RewardNet
 from rlhf_preference_dataset import PreferenceDataset
@@ -39,7 +38,9 @@ class PreferenceComparisons():
         initial_comparison_frac: float = 0.1,
         initial_epoch_multiplier: float = 200.0,
         query_schedule: Union[str, type_aliases.Schedule] = "hyperbolic",
-        draw_freq = 100
+        draw_freq = 100,
+        use_wandb = False,
+        logger = None
     ):
         
         # Init all attributes
@@ -51,7 +52,9 @@ class PreferenceComparisons():
         self.initial_epoch_multiplier = initial_epoch_multiplier
         self.num_iterations = num_iterations
         self.transition_oversampling = transition_oversampling
-        self.draw_freq = draw_freq # draw_freq = 1 when asking for human feedback
+        self.draw_freq = draw_freq # draw_freq = 1 when asking for human feedbackif use_wandb and episode % self.log_freq == 0:
+        self.use_wandb = use_wandb
+        self.logger = logger
         
         # Init schedule
         if callable(query_schedule):
@@ -91,7 +94,7 @@ class PreferenceComparisons():
         probs = unnormalized_probs / np.sum(unnormalized_probs)
         shares = util.oric(probs * total_comparisons)
         schedule = [initial_comparisons] + shares.tolist()
-        print(f"Query schedule: {schedule}")
+        self.logger.info(f"Query schedule: {schedule}")
         timesteps_per_iteration, extra_timesteps = divmod(
             total_timesteps,
             self.num_iterations,
@@ -103,31 +106,37 @@ class PreferenceComparisons():
 
         # MAIN LOOP
         for i, num_pairs in enumerate(schedule):
+            self.logger.info(f"\n \n ROUND {i}")
+
             #############################################
             # Generate trajectories with trained policy #
             #############################################
             # Generate trajectories
             nb_traj = self.transition_oversampling* 2 * num_pairs
-            print(f"Collecting {nb_traj} trajectories")
-            trajectories = self.gym.generate_trajectories(nb_traj, draw_freq=self.draw_freq)
+            self.logger.info(f"Collecting {nb_traj} trajectories")
+            trajectories, success_rate = self.gym.generate_trajectories(nb_traj, draw_freq=self.draw_freq)
+
+            # wandb
+            if self.use_wandb:
+                wandb.log({'reward_learning_success_rate':success_rate})
 
             # Create pairs of trajectories (to be compared)
-            print("Creating trajectory pairs")
+            self.logger.info("Creating trajectory pairs")
             pairs = self.pair_generator(trajectories, num_pairs)
-            print("Pair formation done")
+            self.logger.debug("Pair formation done")
             
             ##########################
             # Gather new preferences #
             ##########################    
             # Gather synthetic or human preferences
-            print("Gathering preferences")
+            self.logger.info("Gathering preferences")
             preferences = self.preference_gatherer(pairs)
-            print("Gathering over")
-            print("Preferences gathered: ", preferences)
+            self.logger.debug("Gathering over")
+            self.logger.debug("Preferences gathered: ", preferences)
 
             # Store preferences in Preference Dataset
             self.dataset.push(pairs, preferences)
-            print(f"Dataset now contains {len(self.dataset)} comparisons")
+            self.logger.info(f"Dataset now contains {len(self.dataset)} comparisons")
 
             ##########################
             # Train the reward model #
@@ -138,9 +147,9 @@ class PreferenceComparisons():
             if i == 0:
                 epoch_multip = self.initial_epoch_multiplier # default: 200
 
-            print("Training reward model")
+            self.logger.info("\n Training reward model")
             self.reward_trainer.train(self.dataset, epoch_multiplier=epoch_multip)
-            print("Reward training finished")
+            self.logger.debug("Reward training finished")
 
             ###################
             # Train the agent #
@@ -152,8 +161,8 @@ class PreferenceComparisons():
             if i == self.num_iterations - 1:
                 num_steps += extra_timesteps
             
-            print("Training agent")
+            self.logger.info("\n Training agent")
             self.gym.training()
-            print("Training finished")
+            self.logger.debug("Training finished")
 
         return {"reward_loss": reward_loss, "reward_accuracy": reward_accuracy}

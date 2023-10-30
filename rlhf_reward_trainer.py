@@ -40,16 +40,19 @@ class LinearRewardTrainer(RewardTrainer):
     def __init__(
         self,
         preference_model: PreferenceModel,
-        gamma
+        gamma,
+        logger = None
     ):
         """Initialize the reward trainer.
 
         Args:
             preference_model: the preference model to train the reward network.
             gamma: discount factor
+            logger: log
         """
         self.preference_model = preference_model
         self.gamma = gamma
+        self.logger = logger
 
     def train(self, dataset, epoch_multiplier = 1., learning_rate = 0.08):
         """Train the reward model on a batch of trajectory pairs and preferences.
@@ -89,7 +92,7 @@ class LinearRewardTrainer(RewardTrainer):
             # Print the average loss for this epoch
             if epoch%10 == 0:
                 average_loss = total_loss/ len(dataset)
-                print(f"Epoch [{epoch + 1}/{num_epochs}] \
+                self.logger.info(f"Epoch [{epoch + 1}/{num_epochs}] \
                     Loss: {average_loss:.4f}")
                 
-        print("Current reward coefficients: ", self.preference_model.reward_model.coeff)
+        self.logger.info(f"---> Current reward coefficients: {self.preference_model.reward_model.coeff}")
