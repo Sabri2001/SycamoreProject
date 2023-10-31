@@ -48,7 +48,7 @@ class ReplayDiscreteGymSupervisor():
                  max_blocks = 30,
                  max_interfaces = 100,
                  log_freq = 100,
-                 reward_function = None,
+                 reward_fun = None,
                  use_wandb=False,
                  logger = None
             ):
@@ -113,7 +113,8 @@ class ReplayDiscreteGymSupervisor():
                                 env="norot")
 
         # Reward fun chosen (see def in relative_single_agent) 
-        if reward_function is None:
+        # TODO
+        if reward_fun is None:
             if config['reward']=='punitive':
                 self.rewardf = punitive_reward
             elif config['reward']=='generous':
@@ -121,7 +122,7 @@ class ReplayDiscreteGymSupervisor():
             elif config['reward']=='modular':
                 self.rewardf = modular_reward
         else:
-            self.rewardf = reward_function
+            self.rewardf = reward_fun
 
         # Store config as attribute -> for access elsewhere
         self.config = config
@@ -258,11 +259,14 @@ class ReplayDiscreteGymSupervisor():
                     n_sides = []
                 
                 # Compute reward and reward features for this robot/step
-                reward =self.rewardf(action, valid, closer, success, failure, n_sides=n_sides, config=self.config)
+                # NOTE: when using Gabriel's rewards-> 
+                # reward = self.rewardf(action, valid, closer, success, failure, n_sides=n_sides, config=self.config)
+
                 reward_features = [int(bool(action)), int(closer), int(success), \
                                    int(failure), np.sum(n_sides), \
                                     int(not np.all(np.logical_xor(n_sides[:3],n_sides[3:])))]
-       
+                reward = self.rewardf(reward_features)
+                
                 # Add reward to reward array (robot,step)
                 rewards_ar[idr,step]=reward
                 if self.agent.rep == 'graph':

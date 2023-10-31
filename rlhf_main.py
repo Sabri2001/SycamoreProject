@@ -7,6 +7,7 @@ import datetime
 import os
 import sys
 import wandb
+import pickle
 
 from single_agent_gym import ReplayDiscreteGymSupervisor
 from rlhf_reward_model import RewardLinear
@@ -20,6 +21,9 @@ from rlhf_preference_comparisons import PreferenceComparisons
 # CONSTANTS
 USE_WANDB = True
 HUMAN_FEEDBACK = False
+LOGGING = True
+SAVE_AGENT = True
+TRAINED_AGENT = "31_01_trained_agent_2" # TODO: automatically set file name
 # %env "WANDB_NOTEBOOK_NAME" "rlhf_main.ipynb"
 
 # Set up logger
@@ -52,12 +56,14 @@ class CustomFileHandler(logging.FileHandler):
 
 logger = logging.getLogger(__name__)
 log_name = "human_feedback" if HUMAN_FEEDBACK else "synthetic_feedback"
-file_handler = CustomFileHandler(log_name)
-filename = file_handler.get_file_name()
-logger.addHandler(file_handler)
 stream_handler = logging.StreamHandler(sys.stdout)
 logger.addHandler(stream_handler)
-logger.setLevel(logging.INFO) # Set the logger level
+logger.setLevel(logging.INFO)  # Set the logger level
+
+if LOGGING:
+    file_handler = CustomFileHandler(log_name)
+    filename = file_handler.get_file_name()
+    logger.addHandler(file_handler)
 
 # blocks
 hexagon = Block([[1,0,0],[1,1,1],[1,1,0],[0,2,1],[0,1,0],[0,1,1]],muc=0.5)
@@ -115,6 +121,11 @@ if USE_WANDB:
 
     
 # INIT
+# Create Reward Model
+# gamma = 1-config['agent_discount_f']
+gamma = 1 # NOTE: in preference model, no discount
+reward_model = RewardLinear(gamma)
+
 # Create Gym (env + agent)
 gym = ReplayDiscreteGymSupervisor(config,
               agent_type=SACSupervisorSparse,
@@ -129,12 +140,9 @@ gym = ReplayDiscreteGymSupervisor(config,
               max_interfaces = 50,
               log_freq = 5, # grid size
               maxs = [9,6],
-              logger = logger
+              logger = logger,
+              reward_fun = reward_model.reward_array_features
               )
-
-# Create Reward Model
-gamma = 1-config['agent_discount_f']
-reward_model = RewardLinear(gamma)
 
 # Create Pair Generator
 pair_generator = RandomPairGenerator()
@@ -186,8 +194,8 @@ logger.info("#######################")
 logger.info("REWARD TRAINING STARTED")
 logger.info("####################### \n")
 pref_comparisons.train(
-    total_timesteps=100, # 5000
-    total_comparisons=20, # 200
+    total_timesteps=5000, # 5000
+    total_comparisons=200, # 200
 )
 logger.debug("REWARD TRAINING ENDED \n \n")
 
@@ -195,14 +203,19 @@ logger.debug("REWARD TRAINING ENDED \n \n")
 logger.info("\n \n ########################################")
 logger.info("AGENT TRAINING ON LEARNED REWARD STARTED")
 logger.info("######################################## \n")
-pref_comparisons.gym.training(nb_episodes=100, use_wandb = USE_WANDB)
-pref_comparisons.run.finish()
+pref_comparisons.gym.training(nb_episodes=1000, use_wandb = USE_WANDB)
 logger.debug("AGENT TRAINING ON LEARNED REWARD ENDED \n \n")
+if SAVE_AGENT:
+    with open(TRAINED_AGENT, "wb") as input_file:
+        pickle.dump(gym.agent,input_file)
 
 # EVALUATE AGENT
 logger.info("\n \n ########################")
 logger.info("AGENT EVALUATION STARTED")
 logger.info("######################## \n")
-success_rate = pref_comparisons.gym.evaluate_agent(nb_trials=50)
+success_rate = pref_comparisons.gym.evaluate_agent(nb_trials=100)
 logger.info(f"Average success rate (gap 2): {success_rate} \n \n")
 logger.debug("AGENT EVALUATION ENDED")
+
+# End wandb
+run.finish()

@@ -65,6 +65,12 @@ class RewardLinear(RewardModel):
     ):
         return np.dot(self.get_coeff(), transition.reward_features)
 
+    def reward_array_features(
+        self,
+        reward_array
+    ):
+        return np.dot(self.get_coeff(), reward_array)
+
 
 class RewardNet(nn.Module, abc.ABC, RewardModel):
     """Minimal abstract reward network.

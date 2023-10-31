@@ -1,8 +1,5 @@
 import abc
 import numpy as np
-from typing import(
-    Sequence
-)
 
 
 class PairGenerator(abc.ABC):
@@ -33,7 +30,7 @@ class PairGenerator(abc.ABC):
 
 class RandomPairGenerator(PairGenerator):
     def __init__(self):
-        pass
+        """Init random pair generator"""
 
     def __call__(self, trajectories, num_pairs):
         """

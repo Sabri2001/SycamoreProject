@@ -162,7 +162,7 @@ class SupervisorRelativeSparse(SupervisorRelative):
                 return buffer_count
 
             # Sample from first buffer_count elements of buffer
-            if buffer_count <buffer.shape[0]:
+            if buffer_count < buffer.shape[0]:
                 batch = np.random.choice(buffer[:buffer_count],batch_size,replace=False)
             else:
                 batch = np.random.choice(buffer,batch_size,replace=False)
