@@ -63,7 +63,7 @@ class LinearRewardTrainer(RewardTrainer):
                 (measured relatively).
         """
         # NOTE: quite sensitive to learning rate + not reliably going down...
-        num_epochs = int(epoch_multiplier*10)
+        num_epochs = int(epoch_multiplier*100)
 
         for epoch in range(num_epochs):
             total_loss = 0.0

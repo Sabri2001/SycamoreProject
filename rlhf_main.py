@@ -19,10 +19,10 @@ from rlhf_preference_comparisons import PreferenceComparisons
 
 
 # CONSTANTS
-USE_WANDB = True
+USE_WANDB = False
 HUMAN_FEEDBACK = False
 LOGGING = True
-SAVE_AGENT = True
+SAVE_AGENT = False
 TRAINED_AGENT = "31_01_trained_agent_2" # TODO: automatically set file name
 # %env "WANDB_NOTEBOOK_NAME" "rlhf_main.ipynb"
 
@@ -122,8 +122,7 @@ if USE_WANDB:
     
 # INIT
 # Create Reward Model
-# gamma = 1-config['agent_discount_f']
-gamma = 1 # NOTE: in preference model, no discount
+gamma = 1-config['agent_discount_f']
 reward_model = RewardLinear(gamma)
 
 # Create Gym (env + agent)

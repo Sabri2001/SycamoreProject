@@ -36,7 +36,7 @@ class PreferenceComparisons():
         comparison_queue_size: Optional[int] = None,
         transition_oversampling = 1,
         initial_comparison_frac: float = 0.1,
-        initial_epoch_multiplier: float = 200.0,
+        initial_epoch_multiplier: float = 20.0, # used to be 200
         query_schedule: Union[str, type_aliases.Schedule] = "hyperbolic",
         draw_freq = 100,
         use_wandb = False,

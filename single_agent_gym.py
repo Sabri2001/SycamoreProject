@@ -26,11 +26,11 @@ link = Block([[0,0,0],[0,1,1],[1,0,0],[1,0,1],[1,1,1],[0,1,0]],muc=0.5)
 # Set up wandb
 wandb_project = "sycamore"
 wandb_entity = "sabri-elamrani"
-USE_WANDB = True
+USE_WANDB = False
 
 # Save options
-SAVE = False
-TRAINED_AGENT = "my_trained_agent_gap2.pickle"
+SAVE = True
+TRAINED_AGENT = "31_01_gabriel_agent.pickle"
 
 
 class ReplayDiscreteGymSupervisor():
@@ -468,6 +468,10 @@ class ReplayDiscreteGymSupervisor():
         trajectory_buffer = np.empty(shape=nb_trials, dtype=object)
         buffer_count = 0
 
+        # Switch to epsilon-greedy policy (exploitation)
+        self.agent.exploration_strat = 'epsilon-greedy'
+        self.agent.eps = 0
+
         # start training
         print("Agent evaluation started")
 
@@ -699,7 +703,7 @@ class ReplayDiscreteGymSupervisor():
      
 if __name__ == '__main__':
     print("Start gym")
-    config = {'train_n_episodes':1000,
+    config = {'train_n_episodes':10000, # TODO: train agent with 10 0000 episodes for better comparison
             'train_l_buffer':200,
             'ep_batch_size':32,
             'ep_use_mask':True,
