@@ -217,4 +217,5 @@ logger.info(f"Average success rate (gap 2): {success_rate} \n \n")
 logger.debug("AGENT EVALUATION ENDED")
 
 # End wandb
-run.finish()
+if USE_WANDB:
+    run.finish()

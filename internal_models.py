@@ -673,6 +673,7 @@ class PolNetSparse(nn.Module):
         self.out_pol = nn.Linear(n_neurons,n_actions,device=device)
         self.device=device
         self.batch_norm = batch_norm
+
     def forward(self,grids,inference = False,mask =None):
         with torch.inference_mode(inference):
             if inference:
@@ -791,8 +792,11 @@ class SACSparseOptimizer():
         self.use_wandb = policy.use_wandb
         self.pol = policy
         self.log_freq = self.pol.log_freq
+
+        # Value network defined
         self.Qs = [ValNetSparse(maxs_grid,max_blocks,n_robots,n_regions,n_actions,config,self.use_wandb)
                   for i in range(2)]
+        
         self.max_entropy = np.log(n_actions)
         self.target_Qs = copy.deepcopy(self.Qs)
         lr = config['opt_lr']
@@ -844,6 +848,7 @@ class SACSparseOptimizer():
         
         #clamp the target value 
         tV = torch.clamp(tV,min=self.lbound)
+
         #update the critics
         losses = torch.zeros(2,device = self.pol.device)
         for i in range(2):
@@ -865,6 +870,8 @@ class SACSparseOptimizer():
         else:
             minQvals = torch.mean(torch.stack(Qvals,dim=1),dim=1)
         _,argmax= torch.max(minQvals,dim=1)
+
+        # update the policy
         l_p = (-F.relu(self.alpha)*entropy-(minQvals.detach()*dist.probs).sum(dim=1)).mean()
         if self.entropy_penalty:
             l_p += self.beta*F.mse_loss(entropy,old_entropy.squeeze())
@@ -873,12 +880,13 @@ class SACSparseOptimizer():
         if self.max_norm is not None:
             norm_p = nn.utils.clip_grad_norm_(self.pol.parameters(),self.max_norm)
         self.opt_pol.step()
+
         #update alpha
         l_alpha = (entropy.detach().mean()-self.target_entropy)*F.elu(self.alpha)
-        
         self.opt_alpha.zero_grad()
         l_alpha.backward()
         self.opt_alpha.step()
+
         #update the target
         for i in range(2):
             sd_target = self.target_Qs[i].state_dict()

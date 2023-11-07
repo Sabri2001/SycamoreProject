@@ -157,9 +157,11 @@ class SupervisorRelativeSparse(SupervisorRelative):
         self.action_per_robot =self.n_actions//n_robots
     
     def update_policy(self,buffer,buffer_count,batch_size,steps=1):
-         for s in range(steps):
+        total_loss = 0
+        for _ in range(steps):
             if batch_size > buffer_count:
-                return buffer_count
+                # return buffer_count
+                return None
 
             # Sample from first buffer_count elements of buffer
             if buffer_count < buffer.shape[0]:
@@ -185,7 +187,8 @@ class SupervisorRelativeSparse(SupervisorRelative):
             rewards = np.array([[transition.r] for transition in batch],dtype=np.float32)
 
             # Optimizer step
-            l_p = self.optimizer.optimize(states,actions,rewards,nstates,self.gamma,mask,nmask=nmask)
+            total_loss += self.optimizer.optimize(states,actions,rewards,nstates,self.gamma,mask,nmask=nmask)
+        return total_loss
         
     def choose_action(self,r_id,state,explore=True,mask=None):
         if mask is None:

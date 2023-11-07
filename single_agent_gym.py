@@ -200,6 +200,11 @@ class ReplayDiscreteGymSupervisor():
         if not train:
             trajectory = Trajectory()
 
+        # Keep track of training loss
+        if train:
+            total_loss = 0
+            loss_nb = 0 # nb of additions to loss, to compute average
+
         # RUN AN EPISODE
         for step in range(max_steps):
             for idr in range(self.n_robots):
@@ -285,7 +290,10 @@ class ReplayDiscreteGymSupervisor():
                 if train:
                     transition_buffer[(transition_buffer_count)%transition_buffer.shape[0]] = current_transition
                     transition_buffer_count +=1
-                    self.agent.update_policy(transition_buffer,transition_buffer_count,batch_size)  
+                    loss = self.agent.update_policy(transition_buffer,transition_buffer_count,batch_size)
+                    if loss != None:
+                        total_loss += loss
+                        loss_nb += 1  
                 else:
                     trajectory.add_transition(current_transition)
 
@@ -311,9 +319,15 @@ class ReplayDiscreteGymSupervisor():
         # else:
         #     anim = None
 
+        if train:
+            if loss_nb == 0:
+                average_loss = None
+            else:
+                average_loss = total_loss/loss_nb
+
         # Return depends on mode (training/trajectory generation)
         if train:
-            return rewards_ar,step,anim,transition_buffer,transition_buffer_count,success,gap
+            return rewards_ar,step,anim,transition_buffer,transition_buffer_count,success,gap,average_loss
         else:
             trajectory.set_animation(anim)
             trajectory_buffer[trajectory_buffer_count] = trajectory
@@ -327,7 +341,9 @@ class ReplayDiscreteGymSupervisor():
                 success_rate_decay = 0.01,
                 nb_episodes = 100,
                 use_wandb = False,
-                log_dir=None):
+                log_dir=None,
+                nb_traj=10
+                ):
         """
         Initialises buffer, and repeatedly (train_n_episodes times) 
         calls episode_restart() to update policy.
@@ -352,7 +368,7 @@ class ReplayDiscreteGymSupervisor():
             # run an episode
             (rewards_ep, _,
              anim, transition_buffer, 
-             buffer_count, success, gap) = self.episode_restart(max_steps,
+             buffer_count, success, gap, loss) = self.episode_restart(max_steps,
                                                             #   draw = episode % draw_freq == 0, #draw_freq-1,
                                                               draw = False, # temporary
                                                               transition_buffer=transition_buffer,
@@ -373,8 +389,11 @@ class ReplayDiscreteGymSupervisor():
             
             # log/wandb
             if episode % pfreq==0:
-                self.logger.info(f'episode {episode}/{nb_episodes} rewards: {np.sum(rewards_ep,axis=1)}')
-                self.logger.info(f"Success rate (gap 2): {success_rate[2]}")
+                # self.logger.info(f'episode {episode}/{nb_episodes} rewards: {np.sum(rewards_ep,axis=1)}')
+                # self.logger.info(f"Success rate (gap 2): {success_rate[2]}")
+                _, suc_rate = self.generate_trajectories(nb_traj)
+                self.logger.info(f'Success rate: {suc_rate} - Loss: {loss}')
+
             if use_wandb and episode % self.log_freq == 0:
                 if self.random_targets == 'random_gap' or self.random_targets == 'random_gap_center':
                     for i in np.arange(self.gap_range[0],self.gap_range[1]):
@@ -417,9 +436,6 @@ class ReplayDiscreteGymSupervisor():
         trajectory_buffer = np.empty(shape=nb_traj, dtype=object)
         buffer_count = 0
 
-        # start training
-        print("Trajectory generation started")
-
         # run over several episodes
         for episode in range(nb_traj):
             # run an episode
@@ -444,7 +460,6 @@ class ReplayDiscreteGymSupervisor():
                 else:
                     success_rate = (1-success_rate_decay)*success_rate
             
-        print("Trajectory generation finished")
         return trajectory_buffer, success_rate[2]
 
     def evaluate_agent(self,
