@@ -162,7 +162,7 @@ class PreferenceComparisons():
                 num_steps += extra_timesteps
             
             self.logger.info("\n Training agent")
-            self.gym.training()
+            self.gym.training(nb_episodes=100)
             self.logger.debug("Training finished")
 
         return {"reward_loss": reward_loss, "reward_accuracy": reward_accuracy}

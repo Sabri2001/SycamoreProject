@@ -22,9 +22,15 @@ from rlhf_preference_comparisons import PreferenceComparisons
 USE_WANDB = True
 HUMAN_FEEDBACK = False
 LOGGING = True
+REMOTE = False
 SAVE_AGENT = True
-TRAINED_AGENT = "14_11_trained_agent_reward_learning_local" # TODO: automatically set file name
+TRAINED_AGENT = "14_11_trained_agent_reward_learning_remote.pickle" # TODO: automatically set file name
 # %env "WANDB_NOTEBOOK_NAME" "rlhf_main.ipynb"
+
+if REMOTE:
+    device = 'cuda'
+else:
+    device = 'cpu'
 
 # Set up logger
 class CustomFileHandler(logging.FileHandler):
@@ -80,7 +86,7 @@ config = {'train_n_episodes':100,
             'agent_discount_f':0.1, # 1-gamma
             'agent_last_only':True,
             'reward': 'modular',
-            'torch_device':'cpu',
+            'torch_device': device,
             'SEnc_n_channels':64,
             'SEnc_n_internal_layer':2,
             'SEnc_stride':1,

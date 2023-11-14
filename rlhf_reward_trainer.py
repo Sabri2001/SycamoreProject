@@ -111,7 +111,7 @@ class LinearRewardTrainer(RewardTrainer):
         self.loss_fn = nn.BCELoss()
 
         # Initialize the optimizer
-        self.optimizer = optim.SGD([{'params': preference_model.reward_model.coeff, 'lr': learning_rate}])
+        self.optimizer = optim.Adam([{'params': preference_model.reward_model.coeff, 'lr': learning_rate}])
 
     def train_step(self, trajectory_pair, pref_traj1):
         self.optimizer.zero_grad()

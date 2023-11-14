@@ -30,7 +30,7 @@ USE_WANDB = False
 
 # Save options
 SAVE = True
-TRAINED_AGENT = "31_01_gabriel_agent.pickle"
+TRAINED_AGENT = "14_11_trained_agent_gabriel_reward_remote.pickle"
 
 
 class ReplayDiscreteGymSupervisor():
@@ -389,11 +389,11 @@ class ReplayDiscreteGymSupervisor():
             
             # log/wandb
             if episode % pfreq==0:
-                # self.logger.info(f'episode {episode}/{nb_episodes} rewards: {np.sum(rewards_ep,axis=1)}')
-                # self.logger.info(f"Success rate (gap 2): {success_rate[2]}")
-                # _, suc_rate = self.generate_trajectories(nb_traj)
-                # self.logger.info(f'Success rate: {suc_rate} - Loss: {loss}')
-                self.logger.info(f'Loss: {loss}')
+                self.logger.info(f'episode {episode}/{nb_episodes} rewards: {np.sum(rewards_ep,axis=1)}')
+                self.logger.info(f"Success rate (gap 2): {success_rate[2]}")
+                _, suc_rate = self.generate_trajectories(nb_traj)
+                self.logger.info(f'Success rate: {suc_rate} - Loss: {loss}')
+                # self.logger.info(f'Loss: {loss}')
 
             if use_wandb and episode % self.log_freq == 0:
                 if self.random_targets == 'random_gap' or self.random_targets == 'random_gap_center':
