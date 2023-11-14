@@ -3,6 +3,7 @@ import torch as th
 import gymnasium as gym
 import abc
 import numpy as np
+import torch
 from typing import (
     Tuple,
     Iterable
@@ -29,7 +30,7 @@ class RewardModel():
         """Compute rewards for a trajectory."""
 
 
-class RewardLinear(RewardModel):
+class RewardLinearNoTorch(RewardModel):
     """Reward is a linear combination of handcrafted features (cf. Gabriel's thesis)"""
 
     def __init__(
@@ -70,6 +71,32 @@ class RewardLinear(RewardModel):
         reward_array
     ):
         return np.dot(self.get_coeff(), reward_array)
+
+
+class RewardLinear(nn.Module):
+    def __init__(self, gamma, coeff=None):
+        super(RewardLinear, self).__init__()
+        self.gamma = gamma
+        if coeff is None:
+            seed = 42  # You can use any integer as the seed
+            torch.manual_seed(seed)
+            self.coeff = nn.Parameter(torch.randn(6), requires_grad=True)
+            print("initial reward: ", torch.randn(6))
+        else:
+            self.coeff = nn.Parameter(torch.tensor(coeff, dtype=torch.float32), requires_grad=True)
+
+    def forward(self, trajectory):
+        """Compute reward for a trajectory."""
+        reward = 0
+        for i, transition in enumerate(trajectory):
+            reward += self.gamma ** i * self.reward_transition(transition)
+        return reward
+
+    def reward_transition(self, transition):
+        return torch.dot(self.coeff, torch.tensor(transition.reward_features, dtype=torch.float32))
+
+    def reward_array_features(self, reward_array):
+        return np.dot(self.coeff.detach().numpy(), reward_array)
 
 
 class RewardNet(nn.Module, abc.ABC, RewardModel):

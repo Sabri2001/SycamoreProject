@@ -19,11 +19,11 @@ from rlhf_preference_comparisons import PreferenceComparisons
 
 
 # CONSTANTS
-USE_WANDB = False
+USE_WANDB = True
 HUMAN_FEEDBACK = False
 LOGGING = True
-SAVE_AGENT = False
-TRAINED_AGENT = "31_01_trained_agent_2" # TODO: automatically set file name
+SAVE_AGENT = True
+TRAINED_AGENT = "14_11_trained_agent_reward_learning_local" # TODO: automatically set file name
 # %env "WANDB_NOTEBOOK_NAME" "rlhf_main.ipynb"
 
 # Set up logger
@@ -164,7 +164,8 @@ else:
 preference_model = PreferenceModel(reward_model)
 
 # Create Reward Trainer
-reward_trainer = LinearRewardTrainer(preference_model, gamma, logger)
+learning_rate = 0.08
+reward_trainer = LinearRewardTrainer(preference_model, gamma, learning_rate, logger)
 
 # Create Preference Comparisons, the main interface
 if HUMAN_FEEDBACK:
