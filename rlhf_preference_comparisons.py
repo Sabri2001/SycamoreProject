@@ -115,6 +115,7 @@ class PreferenceComparisons():
             nb_traj = self.transition_oversampling* 2 * num_pairs
             self.logger.info(f"Collecting {nb_traj} trajectories")
             trajectories, success_rate = self.gym.generate_trajectories(nb_traj, draw_freq=self.draw_freq)
+            self.logger.debug(f"Nb of trajectories generated: {len(trajectories)}")
 
             # wandb
             if self.use_wandb:
@@ -132,7 +133,7 @@ class PreferenceComparisons():
             self.logger.info("Gathering preferences")
             preferences = self.preference_gatherer(pairs)
             self.logger.debug("Gathering over")
-            self.logger.debug("Preferences gathered: ", preferences)
+            self.logger.debug(f"Preferences gathered: {preferences}")
 
             # Store preferences in Preference Dataset
             self.dataset.push(pairs, preferences)
@@ -147,6 +148,7 @@ class PreferenceComparisons():
             if i == 0:
                 epoch_multip = self.initial_epoch_multiplier # default: 200
 
+            epoch_multip = 1.0 # TEMPORARY
             self.logger.info("\n Training reward model")
             self.reward_trainer.train(self.dataset, epoch_multiplier=epoch_multip)
             self.logger.debug("Reward training finished")

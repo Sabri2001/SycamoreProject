@@ -21,9 +21,10 @@ from rlhf_preference_comparisons import PreferenceComparisons
 # CONSTANTS
 USE_WANDB = False
 HUMAN_FEEDBACK = False
-LOGGING = True
+LOGGING = False
 REMOTE = False
-SAVE_AGENT = True
+SAVE_AGENT = False
+LOGGING_LVL = "info"
 
 if REMOTE:
     device = 'cuda'
@@ -62,7 +63,10 @@ logger = logging.getLogger(__name__)
 log_name = "human_feedback" if HUMAN_FEEDBACK else "synthetic_feedback"
 stream_handler = logging.StreamHandler(sys.stdout)
 logger.addHandler(stream_handler)
-logger.setLevel(logging.INFO)  # Set the logger level
+if LOGGING_LVL == "debug":
+    logger.setLevel(logging.DEBUG)
+elif LOGGING_LVL == "info":
+    logger.setLevel(logging.INFO)
 
 if LOGGING:
     file_handler = CustomFileHandler(log_name)

@@ -1,0 +1,45 @@
+RLHF corrected (trained reward applied during agent training)
+
+31/10 (gamma = 1 used for reward model): 
+- two trainings locally with synthetic fb
+- one training on jupyter with synthetic fb -> pb: far too few reward training episodes (forgot to change)
+
+- agents: one trained with Gabriel fb, one with rlhf_local2 (episodes: 10 000) -> TO CHECK!!
+
+
+07/11 (gamma reward model corrected, evaluation with greedy):
+- Added loss tracking for agent training (synth_fb_1) -> weird loss for first few steps (int)
+- Weird loss corrected (synth_fb_2)
+- Success rate during agent training implemented (synth_fb_3)
+- Reward training: 100 -> 1000 steps (synth_fb_4) -> pb: NaN loss in reward fun
+
+
+14/11
+- Linear reward with PyTorch (locally) 
+	trained agent: 14_11_trained_agent_reward_learning_local.pickle 
+	-> with SGD, pb -> one coeff changes far more than the others, loss barely going down (unstable training)
+	learning rate: 0.08
+- Linear reward remote (Adam) 
+	trained agent: 14_11_trained_agent_reward_learning_remote.pickle
+	learning rate: 0.001, now 1000 epsisodes for trainings during reward learning
+	Note: problems with reward training -> super slow (cuda?) & loss not going down
+	
+	
+15/11
+- Regular agent training with Gabriel's reward (gap2 only) -> local (1000 epi)
+	agent: 15_11_trained_agent_gabriel_reward_local.pickle
+- Regular agent training with Gabriel's reward (gap2 only) -> remote (10 000 epi)
+	agent: 15_11_trained_agent_gabriel_reward_remote.pickle
+- Regular agent training with learned reward (gap2 only, 50 rounds) -> local (1000 epi)
+	agent: 15_11_trained_agent_learned_reward50_local.pickle
+- Regular agent training with Gabriel's reward (gap2 only, 50 rounds) -> remote (10 000 epi)
+	agent: 15_11_trained_agent_learned_reward50_remote.pickle --> missing!
+	
+
+19/11
+- Test: automatically set trained_agent name + prin init_reward and reward during training
+	lr0.001, Adam
+	log: synth_fb_1
+	Note: action/closer/sides/opp_sides shoot up, failure goes down (normal), success stationary (normal)
+- Test: sort out success rate
+	log: synth_fb_2

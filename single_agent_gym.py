@@ -356,9 +356,10 @@ class ReplayDiscreteGymSupervisor():
         if self.random_targets == 'random_gap' or self.random_targets == 'random_gap_center':
             success_rate = np.zeros(self.gap_range[1])
             success_rate[0]=1
+            gap_counts = np.zeros(self.gap_range[1])
             res_dict={}
         else:
-            success_rate = 0
+            success_rate = 0 # fixed size => only need one
 
         # init transition buffer
         transition_buffer = np.empty(self.config['train_l_buffer'],dtype = object)
@@ -381,23 +382,19 @@ class ReplayDiscreteGymSupervisor():
                                                               )
             # update success_rate
             if self.random_targets == 'random_gap' or self.random_targets =='random_gap_center':
-                if success:
-                    success_rate[gap] = (1-success_rate_decay)*success_rate[gap] + success_rate_decay
-                else:
-                    success_rate[gap] = (1-success_rate_decay)*success_rate[gap]
+                gap_counts[gap] += 1
+                success_rate[gap] = success_rate[gap]*(gap_counts[gap]-1)/(gap_counts[gap]) + success/gap_counts[gap]
             else:
-                if success:
-                    success_rate = (1-success_rate_decay)*success_rate +success_rate_decay
-                else:
-                    success_rate = (1-success_rate_decay)*success_rate
+                success_rate = success_rate*episode/(episode+1) + success/(episode+1)
             
-            # log/wandb
+            # log
             if not self.use_gabriel and episode % pfreq==0:
                 self.logger.info(f'episode {episode}/{nb_episodes} rewards: {np.sum(rewards_ep,axis=1)}')
                 self.logger.info(f"Success rate (gap 2): {success_rate[2]}")
                 _, suc_rate = self.generate_trajectories(nb_traj)
                 self.logger.info(f'Success rate: {suc_rate} - Loss: {loss}')
 
+            # wandb
             if use_wandb and episode % self.log_freq == 0:
                 if self.random_targets == 'random_gap' or self.random_targets == 'random_gap_center':
                     for i in np.arange(self.gap_range[0],self.gap_range[1]):
@@ -430,9 +427,11 @@ class ReplayDiscreteGymSupervisor():
         if self.random_targets == 'random_gap' or self.random_targets == 'random_gap_center':
             success_rate = np.zeros(self.gap_range[1])
             success_rate[0]=1
+            gap_counts = np.zeros(self.gap_range[1])
             res_dict={}
         else:
-            success_rate = 0 # gap_size 1 => scalar
+            success_rate = 0 # fixed size => only need one
+
 
         # init trajectory buffer
         trajectory_buffer = np.empty(shape=nb_traj, dtype=object)
@@ -444,7 +443,7 @@ class ReplayDiscreteGymSupervisor():
             (_, _,
              _, trajectory_buffer, 
              buffer_count, success, gap) = self.episode_restart(max_steps,
-                                                              draw = episode % draw_freq == 0,#draw_freq-1,
+                                                              draw = episode % draw_freq == 0, #draw_freq-1,
                                                               trajectory_buffer=trajectory_buffer,
                                                               trajectory_buffer_count=buffer_count,
                                                               auto_leave=True,
@@ -452,15 +451,10 @@ class ReplayDiscreteGymSupervisor():
                                                               )
             # update success_rate
             if self.random_targets == 'random_gap' or self.random_targets =='random_gap_center':
-                if success:
-                    success_rate[gap] = (1-success_rate_decay)*success_rate[gap] +success_rate_decay
-                else:
-                    success_rate[gap] = (1-success_rate_decay)*success_rate[gap]
+                gap_counts[gap] += 1
+                success_rate[gap] = success_rate[gap]*(gap_counts[gap]-1)/(gap_counts[gap]) + success/gap_counts[gap]
             else:
-                if success:
-                    success_rate = (1-success_rate_decay)*success_rate +success_rate_decay
-                else:
-                    success_rate = (1-success_rate_decay)*success_rate
+                success_rate = success_rate*episode/(episode+1) + success/(episode+1)
             
         return trajectory_buffer, success_rate[2]
 
