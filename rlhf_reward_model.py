@@ -74,14 +74,15 @@ class RewardLinearNoTorch(RewardModel):
 
 
 class RewardLinear(nn.Module):
-    def __init__(self, gamma, coeff=None):
+    def __init__(self, gamma, logger, coeff=None):
         super(RewardLinear, self).__init__()
         self.gamma = gamma
+        self.logger = logger
         if coeff is None:
             seed = 42  # You can use any integer as the seed
             torch.manual_seed(seed)
             self.coeff = nn.Parameter(torch.randn(6), requires_grad=True)
-            print("initial reward: ", torch.randn(6))
+            self.logger.info(f"\n \n ---> Initial reward: {self.get_reward_coeff()} \n")
         else:
             self.coeff = nn.Parameter(torch.tensor(coeff, dtype=torch.float32), requires_grad=True)
 
@@ -97,6 +98,9 @@ class RewardLinear(nn.Module):
 
     def reward_array_features(self, reward_array):
         return np.dot(self.coeff.detach().numpy(), reward_array)
+    
+    def get_reward_coeff(self):
+        return np.array(self.coeff.data)
 
 
 class RewardNet(nn.Module, abc.ABC, RewardModel):

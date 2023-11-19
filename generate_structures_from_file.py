@@ -41,7 +41,7 @@ def load_agent(file,gym,explore=False):
         agent  = pickle.load(input_file)
     if not explore:
         agent.exploration_strat = 'epsilon-greedy'
-        agent.eps = 0
+        agent.eps = 0.8 # TODO: change back to 0 if greedy
     gym.agent = agent
     return gym
 
@@ -99,8 +99,8 @@ if __name__ == "__main__":
         # gap: size of the fixed gap to be tested
     print("Rewards:")
     print(rewards)
-    gr.save_anim(anim,"exploit_gap2",ext='html')
-    gr.save_anim(anim,"exploit_gap2",ext='gif')
+    gr.save_anim(anim,"exploit_gap_fail4",ext='html')
+    gr.save_anim(anim,"exploit_gap_fail4",ext='gif')
     #name = 'struct8_a2'
     #plt.savefig(f'../graphics/results/experiment 3/{name}.pdf')
     #plt.savefig(f'../graphics/results/experiment 3/{name}.png')

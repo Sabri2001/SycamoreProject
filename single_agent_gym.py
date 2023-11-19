@@ -26,11 +26,12 @@ link = Block([[0,0,0],[0,1,1],[1,0,0],[1,0,1],[1,1,1],[0,1,0]],muc=0.5)
 # Set up wandb
 wandb_project = "sycamore"
 wandb_entity = "sabri-elamrani"
-USE_WANDB = False
+USE_WANDB = True
 
 # Save options
 SAVE = True
-TRAINED_AGENT = "14_11_trained_agent_gabriel_reward_remote.pickle"
+TRAINED_AGENT = "15_11_trained_agent_learned_reward50_local.pickle"
+NAME = "15_11_trained_agent_learned_reward50_local"
 
 
 class ReplayDiscreteGymSupervisor():
@@ -50,13 +51,14 @@ class ReplayDiscreteGymSupervisor():
                  log_freq = 100,
                  reward_fun = None,
                  use_wandb=False,
-                 logger = None
+                 logger = None,
+                 use_gabriel=True
             ):
         
         # wandb init
         if use_wandb:
             self.use_wandb = True
-            self.run = wandb.init(project=wandb_project, entity=wandb_entity, config=config)
+            self.run = wandb.init(project=wandb_project, entity=wandb_entity, name = NAME, config=config)
             self.config = wandb.config
         else:
             self.use_wandb = False
@@ -113,7 +115,8 @@ class ReplayDiscreteGymSupervisor():
                                 env="norot")
 
         # Reward fun chosen (see def in relative_single_agent) 
-        # TODO
+        self.use_gabriel = use_gabriel
+
         if reward_fun is None:
             if config['reward']=='punitive':
                 self.rewardf = punitive_reward
@@ -264,13 +267,14 @@ class ReplayDiscreteGymSupervisor():
                     n_sides = []
                 
                 # Compute reward and reward features for this robot/step
-                # NOTE: when using Gabriel's rewards-> 
-                # reward = self.rewardf(action, valid, closer, success, failure, n_sides=n_sides, config=self.config)
-
                 reward_features = [int(bool(action)), int(closer), int(success), \
                                    int(failure), np.sum(n_sides), \
                                     int(not np.all(np.logical_xor(n_sides[:3],n_sides[3:])))]
-                reward = self.rewardf(reward_features)
+                
+                if self.use_gabriel:
+                    reward = self.rewardf(action, valid, closer, success, failure, n_sides=n_sides, config=self.config)
+                else:
+                    reward = self.rewardf(reward_features)
                 
                 # Add reward to reward array (robot,step)
                 rewards_ar[idr,step]=reward
@@ -388,12 +392,11 @@ class ReplayDiscreteGymSupervisor():
                     success_rate = (1-success_rate_decay)*success_rate
             
             # log/wandb
-            if episode % pfreq==0:
+            if not self.use_gabriel and episode % pfreq==0:
                 self.logger.info(f'episode {episode}/{nb_episodes} rewards: {np.sum(rewards_ep,axis=1)}')
                 self.logger.info(f"Success rate (gap 2): {success_rate[2]}")
                 _, suc_rate = self.generate_trajectories(nb_traj)
                 self.logger.info(f'Success rate: {suc_rate} - Loss: {loss}')
-                # self.logger.info(f'Loss: {loss}')
 
             if use_wandb and episode % self.log_freq == 0:
                 if self.random_targets == 'random_gap' or self.random_targets == 'random_gap_center':
@@ -412,8 +415,6 @@ class ReplayDiscreteGymSupervisor():
                     else:
                         wandb.log({'animation':wandb.Html(anim.to_jshtml())})
                 
-        # if use_wandb:
-        #     self.run.finish()
         return anim
     
     def generate_trajectories(self,
@@ -719,6 +720,47 @@ class ReplayDiscreteGymSupervisor():
      
 if __name__ == '__main__':
     print("Start gym")
+    # config = {'train_n_episodes':10000, # TODO: train agent with 10 0000 episodes for better comparison
+    #         'train_l_buffer':200,
+    #         'ep_batch_size':32,
+    #         'ep_use_mask':True,
+    #         'agent_discount_f':0.1, # 1-gamma
+    #         'agent_last_only':True,
+    #         'reward': 'modular',
+    #         'torch_device':'cpu',
+    #         'SEnc_n_channels':64,
+    #         'SEnc_n_internal_layer':2,
+    #         'SEnc_stride':1,
+    #         'SEnc_order_insensitive':True,
+    #         'SAC_n_fc_layer':3,
+    #         'SAC_n_neurons':128,
+    #         'SAC_batch_norm':True,
+    #         'Q_duel':True,
+    #         'opt_lr':1e-4,
+    #         'opt_pol_over_val': 1,
+    #         'opt_tau': 5e-4,
+    #         'opt_weight_decay':0.0001,
+    #         'opt_exploration_factor':0.001,
+    #         'agent_exp_strat':'softmax',
+    #         'agent_epsilon':0.05, # not needed in sac
+    #         'opt_max_norm': 2,
+    #         'opt_target_entropy':1.8,
+    #         'opt_value_clip':False,
+    #         'opt_entropy_penalty':False,
+    #         'opt_Q_reduction': 'min',
+    #         'V_optimistic':False,
+    #         'reward_failure':-1,
+    #         # 'reward_action':{'Ph': -0.2, 'L':-0.1},
+    #         'reward_action':{'Ph': -0.2}, # only action considered
+    #         'reward_closer':0.4,
+    #         'reward_nsides': 0.1,
+    #         'reward_success':1,
+    #         'reward_opposite_sides':0,
+    #         'opt_lower_bound_Vt':-2,
+    #         'gap_range': [2,3] # this way gap of 2
+    #         # 'gap_range':[2,6]
+    #         }
+    
     config = {'train_n_episodes':10000, # TODO: train agent with 10 0000 episodes for better comparison
             'train_l_buffer':200,
             'ep_batch_size':32,
@@ -748,14 +790,14 @@ if __name__ == '__main__':
             'opt_entropy_penalty':False,
             'opt_Q_reduction': 'min',
             'V_optimistic':False,
-            'reward_failure':-1,
+            'reward_failure':-3.5,
             # 'reward_action':{'Ph': -0.2, 'L':-0.1},
-            'reward_action':{'Ph': -0.2}, # only action considered
-            'reward_closer':0.4,
-            'reward_nsides': 0.1,
-            'reward_success':1,
-            'reward_opposite_sides':0,
-            'opt_lower_bound_Vt':-2,
+            'reward_action':{'Ph': -40.6}, # only action considered
+            'reward_closer': 347.7,
+            'reward_nsides': 87.9,
+            'reward_success': 242.8,
+            'reward_opposite_sides': -29,
+            'opt_lower_bound_Vt': -2,
             'gap_range': [2,3] # this way gap of 2
             # 'gap_range':[2,6]
             }
@@ -785,7 +827,8 @@ if __name__ == '__main__':
     
     # Run training/test
     t0 = time.perf_counter()
-    anim = gym.training(max_steps = 20, draw_freq = 200, pfreq =10) # draw and print freq
+    anim = gym.training(max_steps = 20, draw_freq = 200, pfreq =10,
+                         use_wandb=USE_WANDB, nb_episodes=1000) # draw and print freq
     #gym.test_gap()
     #gr.save_anim(anim,os.path.join(".", f"test_graph"),ext='html')
 

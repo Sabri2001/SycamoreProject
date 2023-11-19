@@ -19,13 +19,11 @@ from rlhf_preference_comparisons import PreferenceComparisons
 
 
 # CONSTANTS
-USE_WANDB = True
+USE_WANDB = False
 HUMAN_FEEDBACK = False
 LOGGING = True
 REMOTE = False
 SAVE_AGENT = True
-TRAINED_AGENT = "14_11_trained_agent_reward_learning_remote.pickle" # TODO: automatically set file name
-# %env "WANDB_NOTEBOOK_NAME" "rlhf_main.ipynb"
 
 if REMOTE:
     device = 'cuda'
@@ -70,6 +68,15 @@ if LOGGING:
     file_handler = CustomFileHandler(log_name)
     filename = file_handler.get_file_name()
     logger.addHandler(file_handler)
+
+if SAVE_AGENT:
+    today_str = datetime.datetime.now().strftime("%d_%m")
+    location_str = "remote" if REMOTE else "local"
+    base_filename = f"{today_str}_trained_agent_reward_learning_{location_str}"
+    index = 1
+    while os.path.exists(f"{base_filename}_{index}.pickle"):
+        index += 1
+    TRAINED_AGENT = f"{base_filename}_{index}.pickle"
 
 # blocks
 hexagon = Block([[1,0,0],[1,1,1],[1,1,0],[0,2,1],[0,1,0],[0,1,1]],muc=0.5)
@@ -129,7 +136,7 @@ if USE_WANDB:
 # INIT
 # Create Reward Model
 gamma = 1-config['agent_discount_f']
-reward_model = RewardLinear(gamma)
+reward_model = RewardLinear(gamma, logger)
 
 # Create Gym (env + agent)
 gym = ReplayDiscreteGymSupervisor(config,
@@ -146,7 +153,8 @@ gym = ReplayDiscreteGymSupervisor(config,
               log_freq = 5, # grid size
               maxs = [9,6],
               logger = logger,
-              reward_fun = reward_model.reward_array_features
+              reward_fun = reward_model.reward_array_features,
+              use_gabriel=False # not using Gabriel's reward fun
               )
 
 # Create Pair Generator
@@ -170,7 +178,7 @@ else:
 preference_model = PreferenceModel(reward_model)
 
 # Create Reward Trainer
-learning_rate = 0.08
+learning_rate = 0.001
 reward_trainer = LinearRewardTrainer(preference_model, gamma, learning_rate, logger)
 
 # Create Preference Comparisons, the main interface

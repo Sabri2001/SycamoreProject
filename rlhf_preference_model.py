@@ -82,6 +82,9 @@ class PreferenceModel(nn.Module):
         self.noise_prob = noise_prob # TODO: uncertainty due to human fb, perhaps for later
         self.threshold = threshold # TODO: check whether threshold value ok
 
+    def get_reward_coeff(self):
+        return self.reward_model.get_reward_coeff()
+
     def forward(self, trajectory_pair):
         """
         Computes the preference probability of the first trajectory for all pairs, 

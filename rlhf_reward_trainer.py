@@ -102,7 +102,7 @@ class LinearRewardTrainerNoTorch(RewardTrainer):
 
 
 class LinearRewardTrainer(RewardTrainer):
-    def __init__(self, preference_model, gamma, learning_rate=0.08, logger=None):
+    def __init__(self, preference_model, gamma, learning_rate=0.001, logger=None):
         self.preference_model = preference_model
         self.gamma = gamma
         self.logger = logger
@@ -143,5 +143,6 @@ class LinearRewardTrainer(RewardTrainer):
             if epoch % 50 == 0:
                 average_loss = total_loss / len(dataset)
                 self.logger.info(f"Epoch [{epoch + 1}/{num_epochs}] Loss: {average_loss:.4f}")
+                self.logger.info(f"   --->  Reward coeff: {self.preference_model.get_reward_coeff()}")
 
         self.logger.info(f"---> Current reward coefficients: {self.preference_model.reward_model.coeff.detach().numpy()}")
