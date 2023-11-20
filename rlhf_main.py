@@ -21,7 +21,7 @@ from rlhf_preference_comparisons import PreferenceComparisons
 # CONSTANTS
 USE_WANDB = False
 HUMAN_FEEDBACK = False
-LOGGING = True
+LOGGING = False
 REMOTE = False
 SAVE_AGENT = False
 LOGGING_LVL = "info"
@@ -61,6 +61,10 @@ class CustomFileHandler(logging.FileHandler):
 
 logger = logging.getLogger(__name__)
 log_name = "human_feedback" if HUMAN_FEEDBACK else "synthetic_feedback"
+if REMOTE:
+    log_name += "_remote"
+else:
+    log_name += "_local"
 stream_handler = logging.StreamHandler(sys.stdout)
 logger.addHandler(stream_handler)
 if LOGGING_LVL == "debug":

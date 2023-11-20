@@ -85,6 +85,9 @@ class PreferenceModel(nn.Module):
     def get_reward_coeff(self):
         return self.reward_model.get_reward_coeff()
 
+    def normalize_reward(self):
+        self.reward_model.normalize_reward()
+
     def forward(self, trajectory_pair):
         """
         Computes the preference probability of the first trajectory for all pairs, 

@@ -48,4 +48,6 @@ RLHF corrected (trained reward applied during agent training)
 20/11
 - Test: remote with cuda for reward training
 	log: synth_fb_remote_1
-- 
+- Test: wandb training -> nb of episodes match?
+	log: synth_fb_local
+	wandb: 20_11_test_nb_episodes

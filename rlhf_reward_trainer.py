@@ -124,6 +124,7 @@ class LinearRewardTrainer(RewardTrainer):
 
         loss.backward()
         self.optimizer.step()
+        self.preference_model.normalize_reward()
 
         return loss.item()
 

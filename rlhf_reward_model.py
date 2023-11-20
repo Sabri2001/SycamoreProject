@@ -102,6 +102,9 @@ class RewardLinear(nn.Module):
     def get_reward_coeff(self):
         return np.array(th.Tensor.cpu(self.coeff.data))
 
+    def normalize_reward(self):
+        self.coeff.data = self.coeff.data/np.linalg.norm(self.coeff.data)*1.49 # same l2-norm as Gab's modular reward
+
 
 class RewardNet(nn.Module, abc.ABC, RewardModel):
     """Minimal abstract reward network.

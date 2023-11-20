@@ -29,9 +29,9 @@ wandb_entity = "sabri-elamrani"
 USE_WANDB = True
 
 # Save options
-SAVE = True
+SAVE = False
 TRAINED_AGENT = "15_11_trained_agent_learned_reward50_local.pickle"
-NAME = "15_11_trained_agent_learned_reward50_local"
+NAME = "20_11_test_nb_episodes" # for wandb
 
 
 class ReplayDiscreteGymSupervisor():
