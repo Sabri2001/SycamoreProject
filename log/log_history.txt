@@ -43,3 +43,9 @@ RLHF corrected (trained reward applied during agent training)
 	Note: action/closer/sides/opp_sides shoot up, failure goes down (normal), success stationary (normal)
 - Test: sort out success rate
 	log: synth_fb_2
+	
+	
+20/11
+- Test: remote with cuda for reward training
+	log: synth_fb_remote_1
+- 

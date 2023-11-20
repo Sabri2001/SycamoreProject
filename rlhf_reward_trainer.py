@@ -145,4 +145,4 @@ class LinearRewardTrainer(RewardTrainer):
                 self.logger.info(f"Epoch [{epoch + 1}/{num_epochs}] Loss: {average_loss:.4f}")
                 self.logger.info(f"   --->  Reward coeff: {self.preference_model.get_reward_coeff()}")
 
-        self.logger.info(f"---> Current reward coefficients: {self.preference_model.reward_model.coeff.detach().numpy()}")
+        self.logger.info(f"---> Current reward coefficients: {torch.Tensor.cpu(self.preference_model.reward_model.coeff).detach().numpy()}")

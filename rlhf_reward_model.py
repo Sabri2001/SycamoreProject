@@ -74,17 +74,17 @@ class RewardLinearNoTorch(RewardModel):
 
 
 class RewardLinear(nn.Module):
-    def __init__(self, gamma, logger, coeff=None):
+    def __init__(self, gamma, logger, device, coeff=None):
         super(RewardLinear, self).__init__()
         self.gamma = gamma
         self.logger = logger
         if coeff is None:
             seed = 42  # You can use any integer as the seed
             torch.manual_seed(seed)
-            self.coeff = nn.Parameter(torch.randn(6), requires_grad=True)
+            self.coeff = nn.Parameter(torch.randn(6, device=device), requires_grad=True)
             self.logger.info(f"\n \n ---> Initial reward: {self.get_reward_coeff()} \n")
         else:
-            self.coeff = nn.Parameter(torch.tensor(coeff, dtype=torch.float32), requires_grad=True)
+            self.coeff = nn.Parameter(torch.tensor(coeff, device=device, dtype=torch.float32), requires_grad=True)
 
     def forward(self, trajectory):
         """Compute reward for a trajectory."""
@@ -94,13 +94,13 @@ class RewardLinear(nn.Module):
         return reward
 
     def reward_transition(self, transition):
-        return torch.dot(self.coeff, torch.tensor(transition.reward_features, dtype=torch.float32))
+        return torch.dot(th.Tensor(self.coeff), torch.tensor(transition.reward_features, dtype=torch.float32))
 
     def reward_array_features(self, reward_array):
-        return np.dot(self.coeff.detach().numpy(), reward_array)
+        return np.dot(th.Tensor(self.coeff).detach().numpy(), reward_array)
     
     def get_reward_coeff(self):
-        return np.array(self.coeff.data)
+        return np.array(th.Tensor.cpu(self.coeff.data))
 
 
 class RewardNet(nn.Module, abc.ABC, RewardModel):

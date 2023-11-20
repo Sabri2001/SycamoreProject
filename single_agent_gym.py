@@ -390,7 +390,7 @@ class ReplayDiscreteGymSupervisor():
             # log
             if not self.use_gabriel and episode % pfreq==0:
                 self.logger.info(f'episode {episode}/{nb_episodes} rewards: {np.sum(rewards_ep,axis=1)}')
-                self.logger.info(f"Success rate (gap 2): {success_rate[2]}")
+                # self.logger.info(f"Success rate (gap 2): {success_rate[2]}")
                 _, suc_rate = self.generate_trajectories(nb_traj)
                 self.logger.info(f'Success rate: {suc_rate} - Loss: {loss}')
 
@@ -714,47 +714,6 @@ class ReplayDiscreteGymSupervisor():
      
 if __name__ == '__main__':
     print("Start gym")
-    # config = {'train_n_episodes':10000, # TODO: train agent with 10 0000 episodes for better comparison
-    #         'train_l_buffer':200,
-    #         'ep_batch_size':32,
-    #         'ep_use_mask':True,
-    #         'agent_discount_f':0.1, # 1-gamma
-    #         'agent_last_only':True,
-    #         'reward': 'modular',
-    #         'torch_device':'cpu',
-    #         'SEnc_n_channels':64,
-    #         'SEnc_n_internal_layer':2,
-    #         'SEnc_stride':1,
-    #         'SEnc_order_insensitive':True,
-    #         'SAC_n_fc_layer':3,
-    #         'SAC_n_neurons':128,
-    #         'SAC_batch_norm':True,
-    #         'Q_duel':True,
-    #         'opt_lr':1e-4,
-    #         'opt_pol_over_val': 1,
-    #         'opt_tau': 5e-4,
-    #         'opt_weight_decay':0.0001,
-    #         'opt_exploration_factor':0.001,
-    #         'agent_exp_strat':'softmax',
-    #         'agent_epsilon':0.05, # not needed in sac
-    #         'opt_max_norm': 2,
-    #         'opt_target_entropy':1.8,
-    #         'opt_value_clip':False,
-    #         'opt_entropy_penalty':False,
-    #         'opt_Q_reduction': 'min',
-    #         'V_optimistic':False,
-    #         'reward_failure':-1,
-    #         # 'reward_action':{'Ph': -0.2, 'L':-0.1},
-    #         'reward_action':{'Ph': -0.2}, # only action considered
-    #         'reward_closer':0.4,
-    #         'reward_nsides': 0.1,
-    #         'reward_success':1,
-    #         'reward_opposite_sides':0,
-    #         'opt_lower_bound_Vt':-2,
-    #         'gap_range': [2,3] # this way gap of 2
-    #         # 'gap_range':[2,6]
-    #         }
-    
     config = {'train_n_episodes':10000, # TODO: train agent with 10 0000 episodes for better comparison
             'train_l_buffer':200,
             'ep_batch_size':32,
@@ -784,14 +743,14 @@ if __name__ == '__main__':
             'opt_entropy_penalty':False,
             'opt_Q_reduction': 'min',
             'V_optimistic':False,
-            'reward_failure':-3.5,
+            'reward_failure':-1,
             # 'reward_action':{'Ph': -0.2, 'L':-0.1},
-            'reward_action':{'Ph': -40.6}, # only action considered
-            'reward_closer': 347.7,
-            'reward_nsides': 87.9,
-            'reward_success': 242.8,
-            'reward_opposite_sides': -29,
-            'opt_lower_bound_Vt': -2,
+            'reward_action':{'Ph': -0.2}, # only action considered
+            'reward_closer':0.4,
+            'reward_nsides': 0.1,
+            'reward_success':1,
+            'reward_opposite_sides':0,
+            'opt_lower_bound_Vt':-2,
             'gap_range': [2,3] # this way gap of 2
             # 'gap_range':[2,6]
             }

@@ -21,7 +21,7 @@ from rlhf_preference_comparisons import PreferenceComparisons
 # CONSTANTS
 USE_WANDB = False
 HUMAN_FEEDBACK = False
-LOGGING = False
+LOGGING = True
 REMOTE = False
 SAVE_AGENT = False
 LOGGING_LVL = "info"
@@ -140,7 +140,7 @@ if USE_WANDB:
 # INIT
 # Create Reward Model
 gamma = 1-config['agent_discount_f']
-reward_model = RewardLinear(gamma, logger)
+reward_model = RewardLinear(gamma, logger, device)
 
 # Create Gym (env + agent)
 gym = ReplayDiscreteGymSupervisor(config,

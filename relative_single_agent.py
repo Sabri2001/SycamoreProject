@@ -1037,6 +1037,7 @@ def n_side_reward(action,valid,closer,terminal,fail,**kwargs):
 def auto_scale_reward(action,valid,closer,terminal,fail,**kwargs):
     assert False, 'not implemented'
     
+    
 if __name__ == '__main__':
     print("Start test Agent")
     config_sparse_SAC = {'train_n_episodes':100000,
