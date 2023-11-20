@@ -103,7 +103,7 @@ class RewardLinear(nn.Module):
         return np.array(th.Tensor.cpu(self.coeff.data))
 
     def normalize_reward(self):
-        self.coeff.data = self.coeff.data/np.linalg.norm(self.coeff.data)*1.49 # same l2-norm as Gab's modular reward
+        self.coeff.data = th.Tensor.cuda(th.Tensor.cpu(self.coeff.data)/np.linalg.norm(th.Tensor.cpu(self.coeff.data))*1.49) # same l2-norm as Gab's modular reward
 
 
 class RewardNet(nn.Module, abc.ABC, RewardModel):

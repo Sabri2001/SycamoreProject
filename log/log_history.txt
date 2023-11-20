@@ -20,7 +20,7 @@ RLHF corrected (trained reward applied during agent training)
 	-> with SGD, pb -> one coeff changes far more than the others, loss barely going down (unstable training)
 	learning rate: 0.08
 - Linear reward remote (Adam) 
-	trained agent: 14_11_trained_agent_reward_learning_remote.pickle
+	trained agent -> training interrupted
 	learning rate: 0.001, now 1000 epsisodes for trainings during reward learning
 	Note: problems with reward training -> super slow (cuda?) & loss not going down
 	
@@ -49,5 +49,12 @@ RLHF corrected (trained reward applied during agent training)
 - Test: remote with cuda for reward training
 	log: synth_fb_remote_1
 - Test: wandb training -> nb of episodes match?
-	log: synth_fb_local
 	wandb: 20_11_test_nb_episodes
+	no log
+- RLHF remote with l2-normalized reward, Adam
+	log: synth_fb_remote_2
+	trained agent: 20_11_trained_agent_reward_learning_remote_2.pickle
+	learning rate: 0.0003, 1000 epsisodes for trainings during reward learning
+	total_timesteps 50000, total comparisons 2000, 60 rounds
+	10000 episodes for training of final agent
+	
