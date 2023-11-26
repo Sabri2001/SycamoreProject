@@ -103,12 +103,12 @@ config = {'train_n_episodes':100,
             'agent_last_only':True,
             'reward': 'modular',
             'torch_device': device,
-            'SEnc_n_channels':64,
+            'SEnc_n_channels':32, # 64
             'SEnc_n_internal_layer':2,
             'SEnc_stride':1,
             'SEnc_order_insensitive':True,
-            'SAC_n_fc_layer':3,
-            'SAC_n_neurons':128,
+            'SAC_n_fc_layer':2, # 3
+            'SAC_n_neurons':64, # 128
             'SAC_batch_norm':True,
             'Q_duel':True,
             'opt_lr':1e-4,
@@ -124,11 +124,11 @@ config = {'train_n_episodes':100,
             'opt_entropy_penalty':False,
             'opt_Q_reduction': 'min',
             'V_optimistic':False,
-            'reward_failure':-1,
-            'reward_action':{'Ph': -0.2, 'L':-0.1},
+            'reward_failure':-2,
+            'reward_action':{'Ph': -0.2},
             'reward_closer':0.4,
-            'reward_nsides': 0.1,
-            'reward_success':1,
+            'reward_nsides': 0.05,
+            'reward_success':5,
             'reward_opposite_sides':0,
             'opt_lower_bound_Vt':-2,
             'gap_range':[2,6]
@@ -138,7 +138,7 @@ config = {'train_n_episodes':100,
 if USE_WANDB:
     wandb_project = "sycamore"
     wandb_entity = "sabri-elamrani"
-    run = wandb.init(project=wandb_project, entity=wandb_entity, name=filename[4:] ,config=config)
+    run = wandb.init(project=wandb_project, entity=wandb_entity, name=filename[4:-4] ,config=config)
     # config = wandb.config
 
     

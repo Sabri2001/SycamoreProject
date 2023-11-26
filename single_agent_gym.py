@@ -31,9 +31,9 @@ wandb_entity = "sabri-elamrani"
 USE_WANDB = True
 
 # Save options
-SAVE = False
-TRAINED_AGENT = "15_11_trained_agent_learned_reward50_local.pickle"
-NAME = "20_11_test_nb_episodes" # for wandb
+SAVE = True
+TRAINED_AGENT = "26_11_trained_agent_gabriel_reward_remote.pickle"
+NAME = "26_11_trained_agent_gabriel_reward_remote" # for wandb
 
 
 class ReplayDiscreteGymSupervisor():
@@ -782,20 +782,21 @@ class ReplayDiscreteGymSupervisor():
      
 if __name__ == '__main__':
     print("Start gym")
-    config = {'train_n_episodes':10000, # TODO: train agent with 10 0000 episodes for better comparison
+    # config
+    config = {'train_n_episodes':50000,
             'train_l_buffer':200,
             'ep_batch_size':32,
             'ep_use_mask':True,
             'agent_discount_f':0.1, # 1-gamma
             'agent_last_only':True,
             'reward': 'modular',
-            'torch_device':'cpu',
-            'SEnc_n_channels':64,
+            'torch_device': 'cuda',
+            'SEnc_n_channels':32, # 64
             'SEnc_n_internal_layer':2,
             'SEnc_stride':1,
             'SEnc_order_insensitive':True,
-            'SAC_n_fc_layer':3,
-            'SAC_n_neurons':128,
+            'SAC_n_fc_layer':2, # 3
+            'SAC_n_neurons':64, # 128
             'SAC_batch_norm':True,
             'Q_duel':True,
             'opt_lr':1e-4,
@@ -811,12 +812,11 @@ if __name__ == '__main__':
             'opt_entropy_penalty':False,
             'opt_Q_reduction': 'min',
             'V_optimistic':False,
-            'reward_failure':-1,
-            # 'reward_action':{'Ph': -0.2, 'L':-0.1},
-            'reward_action':{'Ph': -0.2}, # only action considered
+            'reward_failure':-2,
+            'reward_action':{'Ph': -0.2},
             'reward_closer':0.4,
-            'reward_nsides': 0.1,
-            'reward_success':1,
+            'reward_nsides': 0.05,
+            'reward_success':5,
             'reward_opposite_sides':0,
             'opt_lower_bound_Vt':-2,
             'gap_range':[2,6]
@@ -848,7 +848,7 @@ if __name__ == '__main__':
     # Run training/test
     t0 = time.perf_counter()
     anim = gym.training(max_steps = 20, draw_freq = 200, pfreq =10,
-                         use_wandb=USE_WANDB, nb_episodes=1000) # draw and print freq
+                         use_wandb=USE_WANDB, nb_episodes=50000) # draw and print freq
     #gym.test_gap()
     #gr.save_anim(anim,os.path.join(".", f"test_graph"),ext='html')
 
