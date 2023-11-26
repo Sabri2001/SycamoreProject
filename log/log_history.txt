@@ -71,6 +71,11 @@ RLHF corrected (trained reward applied during agent training)
 	agent: 26_11_trained_agent_gabriel_reward_remote.pickle  
 	wandb: 26_11_trained_agent_gabriel_reward_remote
 	Note: for training revert to Gabriel's computation of success_rate
+	
+- RLHF synthetic fb, 300 comparisons, pref dataset max size 75, 30 rounds
+	log: 26_11_synth_fb_remote_2 ->> REMOVE THE _2 !!
+	agent: 26_11_trained_agent_learned_reward_learning_remote.pickle (50k epi)
+	wandb: 26_11_synthetic_feedback_remote_2 ->> REMOVE THE _2 !!
 
 
 

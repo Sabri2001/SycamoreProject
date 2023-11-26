@@ -138,7 +138,7 @@ config = {'train_n_episodes':100,
 if USE_WANDB:
     wandb_project = "sycamore"
     wandb_entity = "sabri-elamrani"
-    run = wandb.init(project=wandb_project, entity=wandb_entity, name=filename ,config=config)
+    run = wandb.init(project=wandb_project, entity=wandb_entity, name=filename[4:] ,config=config)
     # config = wandb.config
 
     
@@ -199,7 +199,7 @@ else:
 pref_comparisons = PreferenceComparisons(
     gym,
     reward_model,
-    num_iterations=5,  # Set to 60 for better performance
+    num_iterations=30,  # Set to 60 for better performance
     pair_generator=pair_generator,
     preference_gatherer=gatherer,
     reward_trainer=reward_trainer,

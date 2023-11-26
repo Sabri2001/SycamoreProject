@@ -95,10 +95,10 @@ class RewardLinear(nn.Module):
         return reward
 
     def reward_transition(self, transition):
-        return torch.dot(th.Tensor(self.coeff), torch.tensor(transition.reward_features, dtype=torch.float32))
+        return torch.dot(th.Tensor.cpu(self.coeff), torch.tensor(transition.reward_features, dtype=torch.float32))
 
     def reward_array_features(self, reward_array):
-        return np.dot(th.Tensor(self.coeff).detach().numpy(), reward_array)
+        return np.dot(th.Tensor.cpu(self.coeff).detach().numpy(), reward_array)
     
     def get_reward_coeff(self):
         return np.array(th.Tensor.cpu(self.coeff.data))
