@@ -187,7 +187,7 @@ else:
 preference_model = PreferenceModel(reward_model)
 
 # Create Reward Trainer
-learning_rate = 0.001
+learning_rate = 0.0001
 reward_trainer = LinearRewardTrainer(preference_model, gamma, learning_rate, logger)
 
 # Create Preference Comparisons, the main interface
