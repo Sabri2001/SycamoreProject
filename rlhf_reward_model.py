@@ -78,6 +78,7 @@ class RewardLinear(nn.Module):
         super(RewardLinear, self).__init__()
         self.gamma = gamma
         self.logger = logger
+        self.device = device
         if coeff is None:
             seed = 42  # You can use any integer as the seed
             torch.manual_seed(seed)
@@ -103,7 +104,11 @@ class RewardLinear(nn.Module):
         return np.array(th.Tensor.cpu(self.coeff.data))
 
     def normalize_reward(self):
-        self.coeff.data = th.Tensor.cuda(th.Tensor.cpu(self.coeff.data)/np.linalg.norm(th.Tensor.cpu(self.coeff.data))*1.49) # same l2-norm as Gab's modular reward
+        if np.linalg.norm(th.Tensor.cpu(self.coeff.data)) > 1.49:
+            if self.device == 'cuda':
+                self.coeff.data = th.Tensor.cuda(th.Tensor.cpu(self.coeff.data)/np.linalg.norm(th.Tensor.cpu(self.coeff.data))*1.49) # same l2-norm as Gab's modular reward
+            elif self.device == 'cpu':
+                self.coeff.data = self.coeff.data/np.linalg.norm(self.coeff.data)*1.49
 
 
 class RewardNet(nn.Module, abc.ABC, RewardModel):

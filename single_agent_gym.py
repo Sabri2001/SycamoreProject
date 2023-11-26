@@ -362,7 +362,7 @@ class ReplayDiscreteGymSupervisor():
             success_rate = 0 # fixed size => only need one
 
         # init transition buffer
-        transition_buffer = np.empty(self.config['train_l_buffer'],dtype = object)
+        transition_buffer = np.empty(self.config['train_l_buffer'], dtype = object)
         buffer_count= 0
 
         # start training
@@ -512,6 +512,67 @@ class ReplayDiscreteGymSupervisor():
         
         print("Agent evaluation finished")
         return success_rate[2] # success_rate of gap 2
+
+    def avg_return_agent(self,
+                nb_trials = 100,
+                draw_freq=100,
+                max_steps=100,
+                success_rate_decay = 0.01
+                ):
+        """
+        Evaluates agent's current policy using average reward return.
+        """
+        # init success_rate for each possible gap size
+        if self.random_targets == 'random_gap' or self.random_targets == 'random_gap_center':
+            success_rate = np.zeros(self.gap_range[1])
+            success_rate[0]=1
+            res_dict={}
+        else:
+            success_rate = 0 # gap_size 1 => scalar
+
+        # init trajectory buffer
+        trajectory_buffer = np.empty(shape=nb_trials, dtype=object)
+        buffer_count = 0
+
+        # Switch to epsilon-greedy policy (exploitation)
+        self.agent.exploration_strat = 'epsilon-greedy'
+        self.agent.eps = 0
+
+        # start training
+        print("Agent evaluation started")
+
+        # total reward
+        total_reward = 0
+
+        # run over several episodes
+        for episode in range(nb_trials):
+            # run an episode
+            (reward_ar, _,
+             _, trajectory_buffer, 
+             buffer_count, success, gap) = self.episode_restart(max_steps,
+                                                              draw = episode % draw_freq == 0,#draw_freq-1,
+                                                              trajectory_buffer=trajectory_buffer,
+                                                              trajectory_buffer_count=buffer_count,
+                                                              auto_leave=True,
+                                                              train=False
+                                                              )
+            # update success_rate
+            if self.random_targets == 'random_gap' or self.random_targets =='random_gap_center':
+                if success:
+                    success_rate[gap] = (1-success_rate_decay)*success_rate[gap] +success_rate_decay
+                else:
+                    success_rate[gap] = (1-success_rate_decay)*success_rate[gap]
+            else:
+                if success:
+                    success_rate = (1-success_rate_decay)*success_rate +success_rate_decay
+                else:
+                    success_rate = (1-success_rate_decay)*success_rate
+        
+            # update total reward
+            total_reward += np.sum(reward_ar)
+
+        print("Agent evaluation finished")
+        return total_reward/nb_trials
 
     def exploit(self,gap,
                 alterations=None,
@@ -751,8 +812,7 @@ if __name__ == '__main__':
             'reward_success':1,
             'reward_opposite_sides':0,
             'opt_lower_bound_Vt':-2,
-            'gap_range': [2,3] # this way gap of 2
-            # 'gap_range':[2,6]
+            'gap_range':[2,6]
             }
    
     # Create various shapes from basic Block object
@@ -784,6 +844,10 @@ if __name__ == '__main__':
                          use_wandb=USE_WANDB, nb_episodes=1000) # draw and print freq
     #gym.test_gap()
     #gr.save_anim(anim,os.path.join(".", f"test_graph"),ext='html')
+
+    # if SAVE:
+    #     with open(TRAINED_AGENT, "wb") as input_file:
+    #         pickle.dump(gym.agent,input_file)
 
     if SAVE:
         with open(TRAINED_AGENT, "wb") as input_file:

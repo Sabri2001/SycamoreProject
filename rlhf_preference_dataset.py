@@ -13,7 +13,7 @@ class PreferenceDataset():
     method.
     """
 
-    def __init__(self, max_size=10000) -> None:
+    def __init__(self, max_size=50) -> None:
         """Builds an empty PreferenceDataset.
 
         Args:

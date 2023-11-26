@@ -21,7 +21,7 @@ from rlhf_preference_comparisons import PreferenceComparisons
 # CONSTANTS
 USE_WANDB = False
 HUMAN_FEEDBACK = False
-LOGGING = False
+LOGGING = True
 REMOTE = False
 SAVE_AGENT = False
 LOGGING_LVL = "info"
@@ -208,7 +208,8 @@ pref_comparisons = PreferenceComparisons(
     query_schedule="hyperbolic",
     draw_freq=draw_freq,
     use_wandb=USE_WANDB,
-    logger = logger
+    logger = logger,
+    comparison_queue_size=75
 )
 
 # TRAIN REWARD
@@ -216,8 +217,8 @@ logger.info("#######################")
 logger.info("REWARD TRAINING STARTED")
 logger.info("####################### \n")
 pref_comparisons.train(
-    total_timesteps=5000, # 5000
-    total_comparisons=200, # 200
+    total_timesteps=6000, # 5000
+    total_comparisons=300, # 200
 )
 logger.debug("REWARD TRAINING ENDED \n \n")
 
