@@ -382,10 +382,15 @@ class ReplayDiscreteGymSupervisor():
                                                               )
             # update success_rate
             if self.random_targets == 'random_gap' or self.random_targets =='random_gap_center':
-                gap_counts[gap] += 1
-                success_rate[gap] = success_rate[gap]*(gap_counts[gap]-1)/(gap_counts[gap]) + success/gap_counts[gap]
+                if success:
+                    success_rate[gap] = (1-success_rate_decay)*success_rate[gap] +success_rate_decay
+                else:
+                    success_rate[gap] = (1-success_rate_decay)*success_rate[gap]
             else:
-                success_rate = success_rate*episode/(episode+1) + success/(episode+1)
+                if success:
+                    success_rate = (1-success_rate_decay)*success_rate +success_rate_decay
+                else:
+                    success_rate = (1-success_rate_decay)*success_rate
             
             # log
             if not self.use_gabriel and episode % pfreq==0:
@@ -456,7 +461,7 @@ class ReplayDiscreteGymSupervisor():
             else:
                 success_rate = success_rate*episode/(episode+1) + success/(episode+1)
             
-        return trajectory_buffer, success_rate[2]
+        return trajectory_buffer, success_rate[2:]
 
     def evaluate_agent(self,
                 nb_trials = 100,

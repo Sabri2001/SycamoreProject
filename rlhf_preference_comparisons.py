@@ -112,7 +112,7 @@ class PreferenceComparisons():
             # Generate trajectories with trained policy #
             #############################################
             # Generate trajectories
-            nb_traj = self.transition_oversampling* 2 * num_pairs
+            nb_traj = self.transition_oversampling * 2 * num_pairs
             self.logger.info(f"Collecting {nb_traj} trajectories")
             trajectories, success_rate = self.gym.generate_trajectories(nb_traj, draw_freq=self.draw_freq)
             self.logger.debug(f"Nb of trajectories generated: {len(trajectories)}")

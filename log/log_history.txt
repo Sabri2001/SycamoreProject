@@ -66,4 +66,11 @@ RLHF corrected (trained reward applied during agent training)
 
 26/11
 - Test with max pref_dataset size = 50, 200 comparisons => synthetic_feedback_local_1
-- Test with reward_buffer_size=75, 300 comparisons  => synthetic_feedback_local_2
+	
+- Regular agent training with Gabriel's reward (gap2-5) -> remote (50k epi)
+	agent: 26_11_trained_agent_gabriel_reward_remote.pickle  
+	wandb: 26_11_trained_agent_gabriel_reward_remote
+	Note: for training revert to Gabriel's computation of success_rate
+
+
+

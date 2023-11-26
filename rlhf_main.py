@@ -130,7 +130,7 @@ config = {'train_n_episodes':100,
             'reward_success':1,
             'reward_opposite_sides':0,
             'opt_lower_bound_Vt':-2,
-            'gap_range':[2,3]
+            'gap_range':[2,6]
             }
 
 # Set up wandb
@@ -202,7 +202,7 @@ pref_comparisons = PreferenceComparisons(
     pair_generator=pair_generator,
     preference_gatherer=gatherer,
     reward_trainer=reward_trainer,
-    transition_oversampling=1,
+    transition_oversampling=1, # TODO: when disagreement increase this (to 2 or 3?)
     initial_comparison_frac=0.1,
     initial_epoch_multiplier=4,
     query_schedule="hyperbolic",
