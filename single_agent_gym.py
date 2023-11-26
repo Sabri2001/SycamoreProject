@@ -13,6 +13,8 @@ import os
 import wandb
 import numpy as np
 import pickle
+import torch
+
 from discrete_blocks import discrete_block as Block
 from relative_single_agent import SACSupervisorSparse,generous_reward,punitive_reward,modular_reward
 from discrete_simulator import DiscreteSimulator as Sim, Transition, Trajectory
@@ -855,8 +857,7 @@ if __name__ == '__main__':
     #         pickle.dump(gym.agent,input_file)
 
     if SAVE:
-        with open(TRAINED_AGENT, "wb") as input_file:
-            pickle.dump(gym.agent,input_file)
+        torch.save(gym.agent, TRAINED_AGENT, pickle_module=pickle)
 
     t1 = time.perf_counter()
     print(f"time spent: {t1-t0}s")

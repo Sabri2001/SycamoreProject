@@ -8,6 +8,7 @@ import os
 import sys
 import wandb
 import pickle
+import torch
 
 from single_agent_gym import ReplayDiscreteGymSupervisor
 from rlhf_reward_model import RewardLinear
@@ -19,11 +20,11 @@ from rlhf_preference_comparisons import PreferenceComparisons
 
 
 # CONSTANTS
-USE_WANDB = False
+USE_WANDB = True
 HUMAN_FEEDBACK = False
 LOGGING = True
-REMOTE = False
-SAVE_AGENT = False
+REMOTE = True
+SAVE_AGENT = True
 LOGGING_LVL = "info"
 
 if REMOTE:
@@ -226,17 +227,16 @@ logger.debug("REWARD TRAINING ENDED \n \n")
 logger.info("\n \n ########################################")
 logger.info("AGENT TRAINING ON LEARNED REWARD STARTED")
 logger.info("######################################## \n")
-pref_comparisons.gym.training(nb_episodes=1000, use_wandb = USE_WANDB)
+pref_comparisons.gym.training(nb_episodes=50000, use_wandb = USE_WANDB)
 logger.debug("AGENT TRAINING ON LEARNED REWARD ENDED \n \n")
 if SAVE_AGENT:
-    with open(TRAINED_AGENT, "wb") as input_file:
-        pickle.dump(gym.agent,input_file)
+    torch.save(pref_comparisons.gym.agent, TRAINED_AGENT, pickle_module=pickle)
 
 # EVALUATE AGENT
 logger.info("\n \n ########################")
 logger.info("AGENT EVALUATION STARTED")
 logger.info("######################## \n")
-success_rate = pref_comparisons.gym.evaluate_agent(nb_trials=100)
+success_rate = pref_comparisons.gym.evaluate_agent(nb_trials=1000)
 logger.info(f"Average success rate (gap 2): {success_rate} \n \n")
 logger.debug("AGENT EVALUATION ENDED")
 
