@@ -119,7 +119,7 @@ class PreferenceComparisons():
 
             # wandb
             if self.use_wandb:
-                wandb.log({'reward_learning_success_rate':success_rate})
+                wandb.log({'reward_learning_success_rates':success_rate})
 
             # Create pairs of trajectories (to be compared)
             self.logger.info("Creating trajectory pairs")
