@@ -69,12 +69,22 @@ RLHF corrected (trained reward applied during agent training)
 
 CORRECTED GABRIEL'S REWARD (cf. thesis)	+ changed hyperparam model, reduced lr to 1e-4
 - Regular agent training with Gabriel's reward (gap2-5) -> remote (50k epi)
-	agent: 26_11_trained_agent_gabriel_reward_remote_1.pickle  
+	agent: 26_11_trained_agent_gabriel_reward_remote_1.pickle -> WAS OVERWRITTEN
 	wandb: 26_11_trained_agent_gabriel_reward_remote_1
 	Note: for training revert to Gabriel's computation of success_rate
+	
 - RLHF synthetic fb, 300 comparisons, pref dataset max size 75, 30 rounds
 	log: 26_11_synth_fb_remote_1
-	agent: 26_11_trained_agent_learned_reward_learning_remote.pickle (50k epi)
+	agent: 26_11_trained_agent_learned_reward_learning_remote_1.pickle (50k epi)
 	wandb: 26_11_synthetic_feedback_remote_1
+	
+- RLHF synthetic fb, 300 comparisons, pref dataset max size 25 (CHANGE -> this way only look at latest pref), 30 rounds
+	log: 26_11_synth_fb_remote_2
+	agent: 26_11_trained_agent_learned_reward_learning_remote_2.pickle (50k epi) -> FOR SOME REASON NOT PRESENT...
+	wandb: 26_11_synthetic_feedback_remote_2
+	
+- Regular agent training with Gabriel's reward (gap2-5) -> remote (100k epi)
+	agent: 26_11_trained_agent_gabriel_reward_remote.pickle  
+	wandb: 26_11_trained_agent_gabriel_reward_remote_2
 
 

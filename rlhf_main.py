@@ -11,20 +11,20 @@ import pickle
 import torch
 
 from single_agent_gym import ReplayDiscreteGymSupervisor
-from rlhf_reward_model import RewardLinear
+from rlhf_reward_model import RewardLinear, RewardLinearEnsemble
 from rlhf_pair_generator import RandomPairGenerator
 from rlhf_preference_gatherer import SyntheticPreferenceGatherer, HumanPreferenceGatherer
 from rlhf_preference_model import PreferenceModel
-from rlhf_reward_trainer import LinearRewardTrainer
+from rlhf_reward_trainer import LinearRewardTrainer, LinearRewardEnsembleTrainer
 from rlhf_preference_comparisons import PreferenceComparisons
 
 
 # CONSTANTS
-USE_WANDB = True
+USE_WANDB = False
 HUMAN_FEEDBACK = False
-LOGGING = True
-REMOTE = True
-SAVE_AGENT = True
+LOGGING = False
+REMOTE = False
+SAVE_AGENT = False
 LOGGING_LVL = "info"
 
 if REMOTE:
@@ -83,9 +83,9 @@ if SAVE_AGENT:
     location_str = "remote" if REMOTE else "local"
     base_filename = f"{today_str}_trained_agent_reward_learning_{location_str}"
     index = 1
-    while os.path.exists(f"{base_filename}_{index}.pickle"):
+    while os.path.exists(f"{base_filename}_{index}.pt"):
         index += 1
-    TRAINED_AGENT = f"{base_filename}_{index}.pickle"
+    TRAINED_AGENT = f"{base_filename}_{index}.pt"
 
 # blocks
 hexagon = Block([[1,0,0],[1,1,1],[1,1,0],[0,2,1],[0,1,0],[0,1,1]],muc=0.5)
@@ -145,7 +145,8 @@ if USE_WANDB:
 # INIT
 # Create Reward Model
 gamma = 1-config['agent_discount_f']
-reward_model = RewardLinear(gamma, logger, device)
+nb_rewards = 3
+reward_model = RewardLinearEnsemble(gamma, nb_rewards, logger, device)
 
 # Create Gym (env + agent)
 gym = ReplayDiscreteGymSupervisor(config,
@@ -188,7 +189,7 @@ preference_model = PreferenceModel(reward_model)
 
 # Create Reward Trainer
 learning_rate = 0.0001
-reward_trainer = LinearRewardTrainer(preference_model, gamma, learning_rate, logger)
+reward_trainer = LinearRewardEnsembleTrainer(preference_model, gamma, learning_rate, logger)
 
 # Create Preference Comparisons, the main interface
 if HUMAN_FEEDBACK:
@@ -203,7 +204,7 @@ pref_comparisons = PreferenceComparisons(
     pair_generator=pair_generator,
     preference_gatherer=gatherer,
     reward_trainer=reward_trainer,
-    transition_oversampling=1, # TODO: when disagreement increase this (to 2 or 3?)
+    transition_oversampling=2, # when disagreement = 2
     initial_comparison_frac=0.1,
     initial_epoch_multiplier=4,
     query_schedule="hyperbolic",

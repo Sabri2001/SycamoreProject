@@ -74,14 +74,14 @@ class RewardLinearNoTorch(RewardModel):
 
 
 class RewardLinear(nn.Module):
-    def __init__(self, gamma, logger, device, coeff=None):
+    def __init__(self, gamma, logger, device, coeff=None, seed=None):
         super(RewardLinear, self).__init__()
         self.gamma = gamma
         self.logger = logger
         self.device = device
         if coeff is None:
-            seed = 42  # You can use any integer as the seed
-            torch.manual_seed(seed)
+            if seed:
+                torch.manual_seed(seed)
             self.coeff = nn.Parameter(torch.randn(6, device=device), requires_grad=True)
             self.logger.info(f"\n \n ---> Initial reward: {self.get_reward_coeff()} \n")
         else:
@@ -109,6 +109,48 @@ class RewardLinear(nn.Module):
                 self.coeff.data = th.Tensor.cuda(th.Tensor.cpu(self.coeff.data)/np.linalg.norm(th.Tensor.cpu(self.coeff.data))*5.40) # same l2-norm as Gab's modular reward
             elif self.device == 'cpu':
                 self.coeff.data = self.coeff.data/np.linalg.norm(self.coeff.data)*5.40
+
+
+class RewardLinearEnsemble(nn.Module):
+    def __init__(self, gamma, nb_rewards, logger, device):
+        self.nb_rewards = nb_rewards
+        self.reward_list = [RewardLinear(gamma, logger, device) for _ in range(nb_rewards)]
+        self.device = device
+        self.logger = logger
+        self.gamma = gamma
+
+    def forward(self, trajectory):
+        """Compute reward for a trajectory."""
+        reward = 0
+        for i, transition in enumerate(trajectory):
+            reward += self.gamma ** i * self.reward_transition(transition)
+        return reward
+
+    def reward_transition(self, transition):
+        reward = 0
+        for reward_model in self.reward_list:
+            reward += torch.dot(th.Tensor.cpu(reward_model.coeff), torch.tensor(transition.reward_features, dtype=torch.float32))
+        return reward/self.nb_rewards
+
+    def reward_array_features(self, reward_array):
+        reward = 0
+        for reward_model in self.reward_list:
+            reward += np.dot(th.Tensor.cpu(reward_model.coeff).detach().numpy(), reward_array)
+        return reward/self.nb_rewards
+    
+    def get_reward_coeff(self):
+        coeff_list = []
+        for reward_model in self.reward_list:
+            coeff_list.append(np.array(th.Tensor.cpu(reward_model.coeff.data)))
+        return coeff_list
+
+    def normalize_reward(self):
+        for reward_model in self.reward_list:
+            if np.linalg.norm(th.Tensor.cpu(reward_model.coeff.data)) > 5.40:
+                if self.device == 'cuda':
+                    reward_model.coeff.data = th.Tensor.cuda(th.Tensor.cpu(reward_model.coeff.data)/np.linalg.norm(th.Tensor.cpu(reward_model.coeff.data))*5.40) # same l2-norm as Gab's modular reward
+                elif self.device == 'cpu':
+                    reward_model.coeff.data = reward_model.coeff.data/np.linalg.norm(reward_model.coeff.data)*5.40
 
 
 class RewardNet(nn.Module, abc.ABC, RewardModel):
@@ -347,7 +389,7 @@ class RewardNetWithVariance(RewardNet):
 
         Returns:
             * Estimated reward mean of shape `(batch_size,)`.
-            * Estimated reward variance of shape `(batch_size,)`. # noqa: DAR202
+            * Estimated reward variance of shape `(batch_size,)`.
         """
     
 

@@ -16,6 +16,7 @@ class PairGenerator(abc.ABC):
         self,
         trajectories,
         num_pairs,
+        pair_oversampling = None
     ):
         """Create pairs out of a sequence of trajectories.
 
@@ -32,7 +33,7 @@ class RandomPairGenerator(PairGenerator):
     def __init__(self):
         """Init random pair generator"""
 
-    def __call__(self, trajectories, num_pairs):
+    def __call__(self, trajectories, num_pairs, pair_oversampling=None):
         """
         Create pairs of complete trajectories from a collection of trajectories.
 
@@ -52,3 +53,28 @@ class RandomPairGenerator(PairGenerator):
 
         return trajectory_pairs
 
+
+# TODO
+class DisagreementPairGenerator(PairGenerator):
+    def __init__(self):
+        """Init random pair generator"""
+
+    def __call__(self, trajectories, num_pairs, pair_oversampling):
+        """
+        Create pairs of complete trajectories from a collection of trajectories.
+
+        Args:
+            trajectories: A collection of trajectories (each trajectory is a list of Transition objects).
+            num_pairs: The number of trajectory pairs to sample.
+
+        Returns:
+            A list of trajectory pairs, where each pair is represented as a tuple of two complete trajectories.
+        """
+        trajectory_pairs = []
+
+        for _ in range(num_pairs):
+            # Randomly select two trajectories from the list of trajectories
+            selected_trajectories = np.random.choice(trajectories, size=2, replace=True)
+            trajectory_pairs.append(tuple(selected_trajectories))
+
+        return trajectory_pairs

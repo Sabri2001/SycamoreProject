@@ -123,7 +123,7 @@ class PreferenceComparisons():
 
             # Create pairs of trajectories (to be compared)
             self.logger.info("Creating trajectory pairs")
-            pairs = self.pair_generator(trajectories, num_pairs)
+            pairs = self.pair_generator(trajectories, num_pairs, self.transition_oversampling) # oversample when disagreemt
             self.logger.debug("Pair formation done")
             
             ##########################

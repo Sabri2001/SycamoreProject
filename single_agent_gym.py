@@ -32,7 +32,7 @@ USE_WANDB = True
 
 # Save options
 SAVE = True
-TRAINED_AGENT = "26_11_trained_agent_gabriel_reward_remote.pickle"
+TRAINED_AGENT = "26_11_trained_agent_gabriel_reward_remote.pt"
 NAME = "26_11_trained_agent_gabriel_reward_remote" # for wandb
 
 
