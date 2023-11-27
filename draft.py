@@ -1,6 +1,13 @@
 import pickle
 import torch as th
+import numpy as np
 
 
-strg = "log/bravooooooooooooooooooooo.log"
-print(strg[4:-3])
+a = np.array([1., 2.])
+print(a)
+
+b = np.array([[1., 1.], [1., 1.]])
+print(b)
+
+b[1, :] += a
+print(b)

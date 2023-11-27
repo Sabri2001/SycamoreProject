@@ -88,3 +88,20 @@ CORRECTED GABRIEL'S REWARD (cf. thesis)	+ changed hyperparam model, reduced lr t
 	wandb: 26_11_trained_agent_gabriel_reward_remote_2
 
 
+27/11
+TARGET ENTROPY NOW 0.5
+- Regular agent training with Gabriel's reward (gap2-5) -> remote (20k epi)
+	agent: 27_11_trained_agent_gabriel_reward_remote_1.pt
+	wandb: 27_11_trained_agent_gabriel_reward_remote_1
+	
+- RLHF synthetic fb, 200 comparisons, pref dataset max size 25, 30 rounds, 5000 iter
+	log: 27_11_synth_fb_remote_1
+	agent: 27_11_trained_agent_learned_reward_learning_remote_1.pt (20k epi)
+	wandb: 27_11_synthetic_feedback_remote_1
+	
+- RLHF synthetic fb, 200 comparisons, pref dataset max size 25, 30 rounds, DISAGREEMENT
+	log: 27_11_synth_fb_remote_2
+	agent: 27_11_trained_agent_learned_reward_learning_remote_2.pt (20k epi)
+	wandb: 27_11_synthetic_feedback_remote_2
+	
+	

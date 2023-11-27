@@ -12,7 +12,7 @@ import torch
 
 from single_agent_gym import ReplayDiscreteGymSupervisor
 from rlhf_reward_model import RewardLinear, RewardLinearEnsemble
-from rlhf_pair_generator import RandomPairGenerator
+from rlhf_pair_generator import RandomPairGenerator, DisagreementPairGenerator
 from rlhf_preference_gatherer import SyntheticPreferenceGatherer, HumanPreferenceGatherer
 from rlhf_preference_model import PreferenceModel
 from rlhf_reward_trainer import LinearRewardTrainer, LinearRewardEnsembleTrainer
@@ -20,11 +20,11 @@ from rlhf_preference_comparisons import PreferenceComparisons
 
 
 # CONSTANTS
-USE_WANDB = False
+USE_WANDB = True
 HUMAN_FEEDBACK = False
-LOGGING = False
-REMOTE = False
-SAVE_AGENT = False
+LOGGING = True
+REMOTE = True
+SAVE_AGENT = True
 LOGGING_LVL = "info"
 
 if REMOTE:
@@ -119,7 +119,7 @@ config = {'train_n_episodes':100,
             'agent_exp_strat':'softmax',
             'agent_epsilon':0.05, # not needed in sac
             'opt_max_norm': 2,
-            'opt_target_entropy':1.8,
+            'opt_target_entropy':0.5,
             'opt_value_clip':False,
             'opt_entropy_penalty':False,
             'opt_Q_reduction': 'min',
@@ -168,7 +168,7 @@ gym = ReplayDiscreteGymSupervisor(config,
               )
 
 # Create Pair Generator
-pair_generator = RandomPairGenerator()
+pair_generator = DisagreementPairGenerator(reward_model)
 
 # Create Preference Gatherer (human/synthetic)
 if HUMAN_FEEDBACK:
@@ -238,7 +238,7 @@ logger.info("\n \n ########################")
 logger.info("AGENT EVALUATION STARTED")
 logger.info("######################## \n")
 success_rate = pref_comparisons.gym.evaluate_agent(nb_trials=1000)
-logger.info(f"Average success rate (gap 2): {success_rate} \n \n")
+logger.info(f"Average success rate: {success_rate} \n \n")
 logger.debug("AGENT EVALUATION ENDED")
 
 # End wandb

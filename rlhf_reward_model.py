@@ -152,6 +152,32 @@ class RewardLinearEnsemble(nn.Module):
                 elif self.device == 'cpu':
                     reward_model.coeff.data = reward_model.coeff.data/np.linalg.norm(reward_model.coeff.data)*5.40
 
+    def reward_disagreement(self, trajectory_pair):
+        # Compute reward for each traj according to each reward model
+        reward_ar = np.zeros((2,self.nb_rewards))
+        for traj_idx in range(2):
+            for i, transition in enumerate(trajectory_pair[traj_idx].get_transitions()):
+                reward_ar[traj_idx, :] += self.gamma ** i * self.reward_transition_per_reward(transition)
+
+        # Deduce preferences according to each reward model
+        pref_ar = np.zeros(self.nb_rewards)
+        for idx in range(self.nb_rewards):
+            if reward_ar[0, idx] > reward_ar[1,idx]:
+                pref_ar[idx] = 0
+            elif reward_ar[0, idx] < reward_ar[1,idx]:
+                pref_ar[idx] = 1
+            else:
+                pref_ar[idx] = 0.5
+
+        # Return std of preferences (= disagreement)
+        return np.std(pref_ar)
+    
+    def reward_transition_per_reward(self, transition):
+        reward_ar = np.zeros(self.nb_rewards)
+        for idx, reward_model in enumerate(self.reward_list):
+            reward_ar[idx] += torch.dot(th.Tensor.cpu(reward_model.coeff), torch.tensor(transition.reward_features, dtype=torch.float32))
+        return reward_ar
+
 
 class RewardNet(nn.Module, abc.ABC, RewardModel):
     """Minimal abstract reward network.

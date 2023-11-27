@@ -54,10 +54,12 @@ class RandomPairGenerator(PairGenerator):
         return trajectory_pairs
 
 
-# TODO
 class DisagreementPairGenerator(PairGenerator):
-    def __init__(self):
+    def __init__(self,
+                 reward_model
+                 ):
         """Init random pair generator"""
+        self.reward_model = reward_model
 
     def __call__(self, trajectories, num_pairs, pair_oversampling):
         """
@@ -71,10 +73,20 @@ class DisagreementPairGenerator(PairGenerator):
             A list of trajectory pairs, where each pair is represented as a tuple of two complete trajectories.
         """
         trajectory_pairs = []
+        disagreement = []
 
-        for _ in range(num_pairs):
-            # Randomly select two trajectories from the list of trajectories
+        # Oversample pairs + compute disagreement (= std of preferences) for each
+        for _ in range(num_pairs*pair_oversampling):
             selected_trajectories = np.random.choice(trajectories, size=2, replace=True)
             trajectory_pairs.append(tuple(selected_trajectories))
+            disagreement.append(self.reward_model.reward_disagreement(selected_trajectories))
 
-        return trajectory_pairs
+        # Keep the top num_pairs pairs (most disagreement)
+        print(f"Disagreement: {disagreement}")
+        disagreement = np.array(disagreement)
+        sorted_indices = np.argsort(disagreement)
+        top_pairs_indices = sorted_indices[-num_pairs:]
+        print(f"Top indices: {top_pairs_indices}")
+        top_trajectory_pairs = [trajectory_pairs[i] for i in top_pairs_indices]
+
+        return top_trajectory_pairs

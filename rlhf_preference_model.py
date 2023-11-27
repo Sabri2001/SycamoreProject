@@ -108,17 +108,6 @@ class PreferenceModel(nn.Module):
         return proba
 
     def compute_reward_pair(self, trajectory_pair):
-        """
-        Computes the preference probability of the first trajectory for all pairs, 
-        using softmax.
-
-        Args:
-            trajectory_pairs: pair of trajectories.
-
-        Returns:
-            Preference probability for the first element of
-            each trajectory pair in trajectory_pairs.
-        """
         traj1 = trajectory_pair[0].get_transitions()
         traj2 = trajectory_pair[1].get_transitions()
         reward1 = self.reward_model.forward(traj1)

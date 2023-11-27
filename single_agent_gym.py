@@ -807,7 +807,7 @@ if __name__ == '__main__':
             'agent_exp_strat':'softmax',
             'agent_epsilon':0.05, # not needed in sac
             'opt_max_norm': 2,
-            'opt_target_entropy':1.8,
+            'opt_target_entropy':0.5,
             'opt_value_clip':False,
             'opt_entropy_penalty':False,
             'opt_Q_reduction': 'min',
