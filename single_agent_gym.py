@@ -30,10 +30,19 @@ wandb_project = "sycamore"
 wandb_entity = "sabri-elamrani"
 USE_WANDB = True
 
-# Save options
+# Save/wandb options
 SAVE = True
 TRAINED_AGENT = "26_11_trained_agent_gabriel_reward_remote.pt"
 NAME = "26_11_trained_agent_gabriel_reward_remote" # for wandb
+
+# Other options
+NB_EPISODES = 70000
+REMOTE = True
+
+if REMOTE:
+    device = 'cuda'
+else:
+    device = 'cpu'
 
 
 class ReplayDiscreteGymSupervisor():
@@ -783,20 +792,59 @@ class ReplayDiscreteGymSupervisor():
 if __name__ == '__main__':
     print("Start gym")
     # config
-    config = {'train_n_episodes':50000,
+    # config = {'train_n_episodes':50000,
+    #         'train_l_buffer':200,
+    #         'ep_batch_size':32,
+    #         'ep_use_mask':True,
+    #         'agent_discount_f':0.1, # 1-gamma
+    #         'agent_last_only':True,
+    #         'reward': 'modular',
+    #         'torch_device': 'cuda',
+    #         'SEnc_n_channels':32, # 64
+    #         'SEnc_n_internal_layer':2,
+    #         'SEnc_stride':1,
+    #         'SEnc_order_insensitive':True,
+    #         'SAC_n_fc_layer':2, # 3
+    #         'SAC_n_neurons':64, # 128
+    #         'SAC_batch_norm':True,
+    #         'Q_duel':True,
+    #         'opt_lr':1e-4,
+    #         'opt_pol_over_val': 1,
+    #         'opt_tau': 5e-4,
+    #         'opt_weight_decay':0.0001,
+    #         'opt_exploration_factor':0.001,
+    #         'agent_exp_strat':'softmax',
+    #         'agent_epsilon':0.05, # not needed in sac
+    #         'opt_max_norm': 2,
+    #         'opt_target_entropy':0.5,
+    #         'opt_value_clip':False,
+    #         'opt_entropy_penalty':False,
+    #         'opt_Q_reduction': 'min',
+    #         'V_optimistic':False,
+    #         'reward_failure':-2,
+    #         'reward_action':{'Ph': -0.2},
+    #         'reward_closer':0.4,
+    #         'reward_nsides': 0.05,
+    #         'reward_success':5,
+    #         'reward_opposite_sides':0,
+    #         'opt_lower_bound_Vt':-2,
+    #         'gap_range':[2,6]
+    #         }
+   
+    config = {'train_n_episodes':NB_EPISODES,
             'train_l_buffer':200,
-            'ep_batch_size':32,
+            'ep_batch_size':256,
             'ep_use_mask':True,
             'agent_discount_f':0.1, # 1-gamma
             'agent_last_only':True,
             'reward': 'modular',
-            'torch_device': 'cuda',
-            'SEnc_n_channels':32, # 64
-            'SEnc_n_internal_layer':2,
+            'torch_device': device,
+            'SEnc_n_channels':64, # 64
+            'SEnc_n_internal_layer':6,
             'SEnc_stride':1,
             'SEnc_order_insensitive':True,
-            'SAC_n_fc_layer':2, # 3
-            'SAC_n_neurons':64, # 128
+            'SAC_n_fc_layer':3, # 3
+            'SAC_n_neurons':128, # 128
             'SAC_batch_norm':True,
             'Q_duel':True,
             'opt_lr':1e-4,
@@ -807,7 +855,7 @@ if __name__ == '__main__':
             'agent_exp_strat':'softmax',
             'agent_epsilon':0.05, # not needed in sac
             'opt_max_norm': 2,
-            'opt_target_entropy':0.5,
+            'opt_target_entropy':1.8,
             'opt_value_clip':False,
             'opt_entropy_penalty':False,
             'opt_Q_reduction': 'min',
@@ -819,9 +867,9 @@ if __name__ == '__main__':
             'reward_success':5,
             'reward_opposite_sides':0,
             'opt_lower_bound_Vt':-2,
-            'gap_range':[2,6]
+            'gap_range':[1,11]
             }
-   
+
     # Create various shapes from basic Block object
     hexagon = Block([[1,0,0],[1,1,1],[1,1,0],[0,2,1],[0,1,0],[0,1,1]],muc=0.5)
     linkr = Block([[0,0,0],[0,1,1],[1,0,0],[1,0,1],[1,1,1],[0,1,0]],muc=0.5) 
@@ -831,24 +879,38 @@ if __name__ == '__main__':
     target = Block([[0,0,1]])
 
     # Create gym
+    # gym = ReplayDiscreteGymSupervisor(config,
+    #           agent_type=SACSupervisorSparse,
+    #           use_wandb=USE_WANDB,
+    #           actions= ['Ph'], # place-hold only necessary action
+    #           block_type=[hexagon],
+    #           random_targets='random_gap', 
+    #           targets_loc=[[2,0],[6,0]], 
+    #           n_robots=2, 
+    #           max_blocks = 10,
+    #           targets=[target]*2,
+    #           max_interfaces = 50,
+    #           log_freq = 5,
+    #           maxs = [9,6]) # grid size
+
     gym = ReplayDiscreteGymSupervisor(config,
               agent_type=SACSupervisorSparse,
-              use_wandb=USE_WANDB,
+              use_wandb=False,
               actions= ['Ph'], # place-hold only necessary action
-              block_type=[hexagon],
+              block_type=[hexagon, linkh, linkr, linkl],
               random_targets='random_gap', 
               targets_loc=[[2,0],[6,0]], 
               n_robots=2, 
-              max_blocks = 10,
+              max_blocks = 30,
               targets=[target]*2,
-              max_interfaces = 50,
+              max_interfaces = 100,
               log_freq = 5,
-              maxs = [9,6]) # grid size
+              maxs = [30,20]) # grid size
     
     # Run training/test
     t0 = time.perf_counter()
     anim = gym.training(max_steps = 20, draw_freq = 200, pfreq =10,
-                         use_wandb=USE_WANDB, nb_episodes=50000) # draw and print freq
+                         use_wandb=USE_WANDB, nb_episodes=NB_EPISODES) # draw and print freq
     #gym.test_gap()
     #gr.save_anim(anim,os.path.join(".", f"test_graph"),ext='html')
 

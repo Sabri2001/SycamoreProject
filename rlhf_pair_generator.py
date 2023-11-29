@@ -82,11 +82,9 @@ class DisagreementPairGenerator(PairGenerator):
             disagreement.append(self.reward_model.reward_disagreement(selected_trajectories))
 
         # Keep the top num_pairs pairs (most disagreement)
-        print(f"Disagreement: {disagreement}")
         disagreement = np.array(disagreement)
         sorted_indices = np.argsort(disagreement)
         top_pairs_indices = sorted_indices[-num_pairs:]
-        print(f"Top indices: {top_pairs_indices}")
         top_trajectory_pairs = [trajectory_pairs[i] for i in top_pairs_indices]
 
         return top_trajectory_pairs
