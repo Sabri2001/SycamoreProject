@@ -28,7 +28,7 @@ link = Block([[0,0,0],[0,1,1],[1,0,0],[1,0,1],[1,1,1],[0,1,0]],muc=0.5)
 # Set up wandb
 wandb_project = "sycamore"
 wandb_entity = "sabri-elamrani"
-USE_WANDB = True
+USE_WANDB = False
 
 # Save/wandb options
 SAVE = True
@@ -37,7 +37,7 @@ NAME = "26_11_trained_agent_gabriel_reward_remote" # for wandb
 
 # Other options
 NB_EPISODES = 70000
-REMOTE = True
+REMOTE = False
 
 if REMOTE:
     device = 'cuda'
@@ -892,6 +892,13 @@ if __name__ == '__main__':
     #           max_interfaces = 50,
     #           log_freq = 5,
     #           maxs = [9,6]) # grid size
+
+    # Set up wandb
+    if USE_WANDB:
+        wandb_project = "sycamore"
+        wandb_entity = "sabri-elamrani"
+        run = wandb.init(project=wandb_project, entity=wandb_entity, name=NAME ,config=config)
+        # config = wandb.config
 
     gym = ReplayDiscreteGymSupervisor(config,
               agent_type=SACSupervisorSparse,
