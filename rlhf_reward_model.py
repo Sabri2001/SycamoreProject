@@ -1,4 +1,5 @@
 from torch import nn
+import torch.nn.functional as F
 import torch as th
 import gymnasium as gym
 import abc
@@ -8,6 +9,8 @@ from typing import (
     Tuple,
     Iterable
 )
+
+from internal_models import StateEncoderOE
 
 
 class RewardModel():
@@ -50,7 +53,7 @@ class RewardLinearNoTorch(RewardModel):
     def get_coeff(self):
         return self.coeff
 
-    def forward(
+    def reward_trajectory(
         self,
         trajectory
     ):
@@ -87,7 +90,7 @@ class RewardLinear(nn.Module):
         else:
             self.coeff = nn.Parameter(torch.tensor(coeff, device=device, dtype=torch.float32), requires_grad=True)
 
-    def forward(self, trajectory):
+    def reward_trajectory(self, trajectory):
         """Compute reward for a trajectory."""
         reward = 0
         for i, transition in enumerate(trajectory):
@@ -119,7 +122,7 @@ class RewardLinearEnsemble(nn.Module):
         self.logger = logger
         self.gamma = gamma
 
-    def forward(self, trajectory):
+    def reward_trajectory(self, trajectory):
         """Compute reward for a trajectory."""
         reward = 0
         for i, transition in enumerate(trajectory):
@@ -177,6 +180,73 @@ class RewardLinearEnsemble(nn.Module):
         for idx, reward_model in enumerate(self.reward_list):
             reward_ar[idx] += torch.dot(th.Tensor.cpu(reward_model.coeff), torch.tensor(transition.reward_features, dtype=torch.float32))
         return reward_ar
+
+
+class RewardCNN(nn.Module):
+    def __init__(self,
+                 gamma,
+                 logger,
+                 device,
+                 maxs_grid,
+                 n_robots,
+                 n_regions,
+                 config):
+        #unpack the config file
+        n_fc_layer = config['SAC_n_fc_layer']
+        n_neurons = config['SAC_n_neurons']
+        batch_norm = config['SAC_batch_norm']
+        device = config['torch_device']
+        encoder_args = {'n_channels':config['SEnc_n_channels'],
+                        'n_internal_layer':config['SEnc_n_internal_layer'],
+                        'stride':config['SEnc_stride']}
+        
+        if config['SEnc_order_insensitive']:
+            self.state_encoder = StateEncoderOE(maxs_grid,
+                                          n_robots,
+                                          n_regions,
+                                          config['agent_last_only'],
+                                          device=device,
+                                          **encoder_args)
+
+        self.input_norm = nn.BatchNorm2d(self.state_encoder.out_dims[0],device=device)
+        self.FC = nn.ModuleList([nn.Linear(np.prod(self.state_encoder.out_dims),n_neurons,device=device)])
+        self.FC+=nn.ModuleList([nn.Linear(n_neurons,n_neurons,device=device) for i in range(n_fc_layer-1)])
+        self.out_reward = nn.Linear(n_neurons,1,device=device) # output of size 1 for reward
+        self.sigmoid = nn.Sigmoid(device=device)
+        self.device=device
+        self.batch_norm = batch_norm
+        self.gamma = gamma
+        self.logger = logger
+
+    def forward(self,grids,inference = False):
+        with torch.inference_mode(inference):
+            if inference:
+                self.eval()
+            else:
+                self.train()
+            if self.batch_norm:
+                normed_rep = self.input_norm(self.state_encoder(grids))
+                rep = torch.flatten(normed_rep,1)
+            else:
+                rep = torch.flatten(self.state_encoder(grids),1)
+            for layer in self.FC:
+                rep = F.relu(layer(rep))
+            reward = self.sigmoid(self.out_reward(rep))*5.40 # reward of same magnitude as Gab's
+            return reward
+
+    def reward_trajectory(self, trajectory):
+        """Compute reward for a trajectory."""
+        reward = 0
+        for i, transition in enumerate(trajectory):
+            reward += self.gamma ** i * self.reward_transition(transition)
+        return reward
+
+    def reward_transition(self, transition):
+        grid = transition.new_state['grid']
+        return self.forward(grid)
+
+    def reward_array_features(self, grid):
+        return self.forward(grid, inference=True)
 
 
 class RewardNet(nn.Module, abc.ABC, RewardModel):

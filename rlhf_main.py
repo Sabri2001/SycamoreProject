@@ -11,23 +11,24 @@ import pickle
 import torch
 
 from single_agent_gym import ReplayDiscreteGymSupervisor
-from rlhf_reward_model import RewardLinear, RewardLinearEnsemble
+from rlhf_reward_model import RewardLinear, RewardLinearEnsemble, RewardCNN
 from rlhf_pair_generator import RandomPairGenerator, DisagreementPairGenerator
 from rlhf_preference_gatherer import SyntheticPreferenceGatherer, HumanPreferenceGatherer
 from rlhf_preference_model import PreferenceModel
-from rlhf_reward_trainer import LinearRewardTrainer, LinearRewardEnsembleTrainer
+from rlhf_reward_trainer import LinearRewardTrainer, LinearRewardEnsembleTrainer, RewardTrainerCNN
 from rlhf_preference_comparisons import PreferenceComparisons
 
 
 # CONSTANTS
 USE_WANDB = False
-HUMAN_FEEDBACK = True
+HUMAN_FEEDBACK = False
 LOGGING = False
 REMOTE = False
 SAVE_AGENT = True
 LOGGING_LVL = "info"
 DISAGREEMENT = False
 SAVE_PREFERENCES = True
+LINEAR = False
 
 if REMOTE:
     device = 'cuda'
@@ -206,7 +207,10 @@ nb_rewards = 3
 if DISAGREEMENT:
     reward_model = RewardLinearEnsemble(gamma, nb_rewards, logger, device)
 else:
-    reward_model = RewardLinear(gamma, logger, device)
+    if LINEAR:
+        reward_model = RewardLinear(gamma, logger, device)
+    else:
+        reward_model = RewardCNN(gamma, logger, device, [30,20], 2, 2, config)
 
 # Create Gym (env + agent)
 # gym = ReplayDiscreteGymSupervisor(config,
@@ -272,7 +276,10 @@ learning_rate = 0.0001
 if DISAGREEMENT:
     reward_trainer = LinearRewardEnsembleTrainer(preference_model, gamma, learning_rate, logger)
 else:
-    reward_trainer = LinearRewardTrainer(preference_model, gamma, learning_rate, logger)
+    if LINEAR:
+        reward_trainer = LinearRewardTrainer(preference_model, gamma, learning_rate, logger)
+    else:
+        reward_trainer = RewardTrainerCNN(preference_model, gamma, learning_rate, logger)
 
 # Create Preference Comparisons, the main interface
 if HUMAN_FEEDBACK:

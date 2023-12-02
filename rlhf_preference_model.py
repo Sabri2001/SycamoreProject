@@ -102,8 +102,8 @@ class PreferenceModel(nn.Module):
         """
         traj1 = trajectory_pair[0].get_transitions()
         traj2 = trajectory_pair[1].get_transitions()
-        reward1 = self.reward_model.forward(traj1)
-        reward2 = self.reward_model.forward(traj2)
+        reward1 = self.reward_model.reward_trajectory(traj1)
+        reward2 = self.reward_model.reward_trajectory(traj2)
         proba = self.probability(reward1, reward2)
         return proba
 

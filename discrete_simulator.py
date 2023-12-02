@@ -32,6 +32,9 @@ class Transition():
 
     def get_reward_features(self):
         return self.reward_features
+    
+    def get_grid(self):
+        return self.new_state['grid']
 
 
 class Trajectory():
