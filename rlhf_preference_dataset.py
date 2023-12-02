@@ -66,3 +66,78 @@ class PreferenceDataset():
     def load(path: AnyPath) -> "PreferenceDataset":
         with open(path, "rb") as file:
             return pickle.load(file)
+
+
+class PreferenceDatasetNoDiscard():
+    """A Dataset for preference comparisons.
+
+    Each item is a preference (for traj1) -> 1, 0 or 0.5.
+
+    This dataset is meant to be generated piece by piece during the
+    training process, which is why data can be added via the .push()
+    method.
+    """
+
+    def __init__(self, max_size=50) -> None:
+        """Builds an empty PreferenceDataset.
+
+        Args:
+            max_size: Maximum number of preference comparisons to store in the dataset.
+                If None (default), the dataset can grow indefinitely. Otherwise, the
+                dataset acts as a FIFO queue, and the oldest comparisons are kept for
+                saving, but are not used anymore.
+        """
+        # Complete set for saving (no discarding)
+        self.traj_list1 = []
+        self.traj_list2 = []
+        self.preferences: np.ndarray = np.array([])
+
+        self.max_size = max_size
+        # Preferences to consider in reward training
+        self.current_traj_list1 = []
+        self.current_traj_list2 = []
+        self.current_preferences: np.ndarray = np.array([])
+
+    def push(
+        self,
+        pairs: [],
+        preferences: np.ndarray,
+    ):
+        """Add more samples to the dataset.
+
+        Args:
+            pairs: list of pairs of trajectories to add
+            preferences: corresponding preference 
+        """
+        traj_list1, traj_list2 = zip(*pairs)
+
+        self.traj_list1.extend(traj_list1)
+        self.traj_list2.extend(traj_list2)
+        self.preferences = np.concatenate((self.preferences, preferences))
+
+        # Only consider latest max_size samples for reward training
+        if self.max_size is not None:
+            extra = len(self.preferences) - self.max_size
+            if extra > 0:
+                self.current_traj_list1 = self.traj_list1[extra:]
+                self.current_traj_list2 = self.traj_list2[extra:]
+                self.current_preferences = self.preferences[extra:]
+            else:
+                self.current_traj_list1 = self.traj_list1
+                self.current_traj_list2 = self.traj_list2
+                self.current_preferences = self.preferences
+
+    def __getitem__(self, key):
+        return (self.current_traj_list1[key], self.current_traj_list2[key]), self.current_preferences[key]
+
+    def __len__(self) -> int:
+        assert len(self.current_traj_list1) == len(self.current_traj_list2) == len(self.current_preferences)
+        return len(self.current_traj_list1)
+
+    def save(self, path: AnyPath):
+        with open(path, "wb") as file:
+            pickle.dump(self, file)
+
+    def load(self, path: AnyPath):
+        with open(path, "rb") as file:
+            return pickle.load(file)

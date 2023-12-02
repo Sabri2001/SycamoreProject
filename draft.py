@@ -2,12 +2,11 @@ import pickle
 import torch as th
 import numpy as np
 
+from rlhf_preference_dataset import PreferenceDatasetNoDiscard, PreferenceDataset
 
-a = np.array([1., 2.])
-print(a)
+dataset = PreferenceDatasetNoDiscard(50)
+print(f"Dataset: {dataset}")
 
-b = np.array([[1., 1.], [1., 1.]])
-print(b)
-
-b[1, :] += a
-print(b)
+path = "02_12_rlhf_pref_dataset_local_1.pickle"
+a = dataset.load(path)
+print(f"Loaded: {len(a)}")

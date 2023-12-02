@@ -9,7 +9,7 @@ from imitation.util import util
 import wandb
 
 from rlhf_reward_model import RewardNet
-from rlhf_preference_dataset import PreferenceDataset
+from rlhf_preference_dataset import PreferenceDataset, PreferenceDatasetNoDiscard
 from rlhf_reward_trainer import RewardTrainer
 from rlhf_preference_gatherer import PreferenceGatherer
 from rlhf_pair_generator import PairGenerator
@@ -40,7 +40,8 @@ class PreferenceComparisons():
         query_schedule: Union[str, type_aliases.Schedule] = "hyperbolic",
         draw_freq = 100,
         use_wandb = False,
-        logger = None
+        logger = None,
+        dataset_path = None
     ):
         
         # Init all attributes
@@ -52,7 +53,7 @@ class PreferenceComparisons():
         self.initial_epoch_multiplier = initial_epoch_multiplier
         self.num_iterations = num_iterations
         self.transition_oversampling = transition_oversampling
-        self.draw_freq = draw_freq # draw_freq = 1 when asking for human feedbackif use_wandb and episode % self.log_freq == 0:
+        self.draw_freq = draw_freq # draw_freq = 1 when asking for human feedback if use_wandb and episode % self.log_freq == 0:
         self.use_wandb = use_wandb
         self.logger = logger
         
@@ -65,7 +66,8 @@ class PreferenceComparisons():
             raise ValueError(f"Unknown query schedule: {query_schedule}")
 
         # Init preference dataset
-        self.dataset = PreferenceDataset(max_size=comparison_queue_size)
+        self.dataset = PreferenceDatasetNoDiscard(max_size=comparison_queue_size)
+        self.dataset_path = dataset_path
 
         # Init gym
         self.gym = gym
@@ -148,6 +150,7 @@ class PreferenceComparisons():
             if i == 0:
                 epoch_multip = self.initial_epoch_multiplier # default: 200
 
+            epoch_multip = 1.0 # TODO: PUT BACK
             self.logger.info("\n Training reward model")
             self.reward_trainer.train(self.dataset, epoch_multiplier=epoch_multip)
             self.logger.debug("Reward training finished")
@@ -163,7 +166,12 @@ class PreferenceComparisons():
                 num_steps += extra_timesteps
             
             self.logger.info("\n Training agent")
-            self.gym.training(nb_episodes=100)
+            self.gym.training(nb_episodes=100) # TODO: PUT BACK
             self.logger.debug("Training finished")
+    
+        # if human feedback, save preferences
+        if self.dataset_path:
+            self.logger.info("\n Preference dataset saved")
+            self.dataset.save(self.dataset_path)
 
         return {"reward_loss": reward_loss, "reward_accuracy": reward_accuracy}

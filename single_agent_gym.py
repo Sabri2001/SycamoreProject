@@ -448,7 +448,6 @@ class ReplayDiscreteGymSupervisor():
         else:
             success_rate = 0 # fixed size => only need one
 
-
         # init trajectory buffer
         trajectory_buffer = np.empty(shape=nb_traj, dtype=object)
         buffer_count = 0
@@ -832,7 +831,7 @@ if __name__ == '__main__':
     #         }
    
     config = {'train_n_episodes':NB_EPISODES,
-            'train_l_buffer':200,
+            'train_l_buffer':1000000,
             'ep_batch_size':256,
             'ep_use_mask':True,
             'agent_discount_f':0.1, # 1-gamma

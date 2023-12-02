@@ -64,7 +64,7 @@ RLHF corrected (trained reward applied during agent training)
 - Reward comparisons: 21_11_reward_comparisons (comparison of 21_11_learned_reward50 and 15_11_gabriel_reward_remote)
 
 
-26/11
+26/11 - PROBLEM: trained RLHF agent for only 1000 epi at each round
 - Test with max pref_dataset size = 50, 200 comparisons => synthetic_feedback_local_1
 
 CORRECTED GABRIEL'S REWARD (cf. thesis)	+ changed hyperparam model, reduced lr to 1e-4
@@ -88,7 +88,7 @@ CORRECTED GABRIEL'S REWARD (cf. thesis)	+ changed hyperparam model, reduced lr t
 	wandb: 26_11_trained_agent_gabriel_reward_remote_2
 
 
-27/11
+27/11 - PROBLEM: trained RLHF agent for only 1000 epi at each round
 TARGET ENTROPY NOW 0.5
 - Regular agent training with Gabriel's reward (gap2-5) -> remote (20k epi)
 	agent: 27_11_trained_agent_gabriel_reward_remote.pt
@@ -105,11 +105,17 @@ TARGET ENTROPY NOW 0.5
 	wandb: 27_11_synthetic_feedback_remote_2
 	
 	
-01/12
+01/12 -> interrupted prematurealy cause i'm an idiot
+- Regular agent training with Gabriel's reward (gap1-11) -> remote (70k epi)
+	agent: 01_12_trained_agent_gabriel_reward_remote.pt
+	wandb: 01_12_trained_agent_gabriel_reward_remote
+	
+	
+02/12
 - Regular agent training with Gabriel's reward (gap1-11) -> remote (70k epi)
 	agent: 01_12_trained_agent_gabriel_reward_remote.pt
 	wandb: 01_12_trained_agent_gabriel_reward_remote	
-
+	
 - RLHF synthetic fb, 600 comparisons, pref dataset max size 50, 30 rounds, 5000 iter
 	log: 01_12_synth_fb_remote_1
 	agent: 01_12_trained_agent_learned_reward_learning_remote_1.pt (70k epi)
@@ -117,9 +123,7 @@ TARGET ENTROPY NOW 0.5
 	
 - RLHF synthetic fb, 600 comparisons, pref dataset max size 50, 30 rounds, DISAGREEMENT
 	log: 01_12_synth_fb_remote_2
-	agent: 01_12_trained_agent_learned_reward_learning_remote_2.pt (70k epi)
-	
-	
-	wandb: 29_11_synthetic_feedback_remote_2
+	agent: 01_12_trained_agent_learned_reward_learning_remote_2.pt (70k epi)	
+	wandb: 01_12_synthetic_feedback_remote_2
 	
 	

@@ -20,13 +20,14 @@ from rlhf_preference_comparisons import PreferenceComparisons
 
 
 # CONSTANTS
-USE_WANDB = True
+USE_WANDB = False
 HUMAN_FEEDBACK = False
-LOGGING = True
-REMOTE = True
+LOGGING = False
+REMOTE = False
 SAVE_AGENT = True
 LOGGING_LVL = "info"
 DISAGREEMENT = False
+SAVE_PREFERENCES = True
 
 if REMOTE:
     device = 'cuda'
@@ -87,6 +88,17 @@ if SAVE_AGENT:
     while os.path.exists(f"{base_filename}_{index}.pt"):
         index += 1
     TRAINED_AGENT = f"{base_filename}_{index}.pt"
+
+if SAVE_PREFERENCES:
+    today_str = datetime.datetime.now().strftime("%d_%m")
+    location_str = "remote" if REMOTE else "local"
+    base_filename = f"{today_str}_rlhf_pref_dataset_{location_str}"
+    index = 1
+    while os.path.exists(f"{base_filename}_{index}.pickle"):
+        index += 1
+    PREF_DATASET_PATH = f"{base_filename}_{index}.pickle"
+else:
+    PREF_DATASET_PATH = None
 
 if DISAGREEMENT:
     over_sampling = 2
@@ -271,7 +283,7 @@ else:
 pref_comparisons = PreferenceComparisons(
     gym,
     reward_model,
-    num_iterations=30,  # Set to 60 for better performance
+    num_iterations=3,  # Set to 60 for better performance # TODO: PUT BACK
     pair_generator=pair_generator,
     preference_gatherer=gatherer,
     reward_trainer=reward_trainer,
@@ -282,7 +294,8 @@ pref_comparisons = PreferenceComparisons(
     draw_freq=draw_freq,
     use_wandb=USE_WANDB,
     logger = logger,
-    comparison_queue_size=50
+    comparison_queue_size=5, # TODO: PUT BACK
+    dataset_path=PREF_DATASET_PATH
 )
 
 # TRAIN REWARD
@@ -290,27 +303,27 @@ logger.info("#######################")
 logger.info("REWARD TRAINING STARTED")
 logger.info("####################### \n")
 pref_comparisons.train(
-    total_timesteps=5000, # 5000
-    total_comparisons=300, # 200
+    total_timesteps=500, # 5000 # TODO: PUT BACK
+    total_comparisons=30, # 200 # TODO: PUT BACK
 )
 logger.debug("REWARD TRAINING ENDED \n \n")
 
-# TRAIN AGENT ON LEARNED REWARD
-logger.info("\n \n ########################################")
-logger.info("AGENT TRAINING ON LEARNED REWARD STARTED")
-logger.info("######################################## \n")
-pref_comparisons.gym.training(nb_episodes=70000, use_wandb = USE_WANDB)
-logger.debug("AGENT TRAINING ON LEARNED REWARD ENDED \n \n")
-if SAVE_AGENT:
-    torch.save(pref_comparisons.gym.agent, TRAINED_AGENT, pickle_module=pickle)
+# # TRAIN AGENT ON LEARNED REWARD # TODO: PUT BACK
+# logger.info("\n \n ########################################")
+# logger.info("AGENT TRAINING ON LEARNED REWARD STARTED")
+# logger.info("######################################## \n")
+# pref_comparisons.gym.training(nb_episodes=70000, use_wandb = USE_WANDB)
+# logger.debug("AGENT TRAINING ON LEARNED REWARD ENDED \n \n")
+# if SAVE_AGENT:
+#     torch.save(pref_comparisons.gym.agent, TRAINED_AGENT, pickle_module=pickle)
 
-# EVALUATE AGENT
-logger.info("\n \n ########################")
-logger.info("AGENT EVALUATION STARTED")
-logger.info("######################## \n")
-success_rate = pref_comparisons.gym.evaluate_agent(nb_trials=1000)
-logger.info(f"Average success rate: {success_rate} \n \n")
-logger.debug("AGENT EVALUATION ENDED")
+# # EVALUATE AGENT
+# logger.info("\n \n ########################")
+# logger.info("AGENT EVALUATION STARTED")
+# logger.info("######################## \n")
+# success_rate = pref_comparisons.gym.evaluate_agent(nb_trials=1000)
+# logger.info(f"Average success rate: {success_rate} \n \n")
+# logger.debug("AGENT EVALUATION ENDED")
 
 # End wandb
 if USE_WANDB:
