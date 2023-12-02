@@ -21,7 +21,7 @@ from rlhf_preference_comparisons import PreferenceComparisons
 
 # CONSTANTS
 USE_WANDB = False
-HUMAN_FEEDBACK = False
+HUMAN_FEEDBACK = True
 LOGGING = False
 REMOTE = False
 SAVE_AGENT = True

@@ -1,12 +1,14 @@
-import pickle
-import torch as th
-import numpy as np
+import random
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 
-from rlhf_preference_dataset import PreferenceDatasetNoDiscard, PreferenceDataset
+fig = plt.figure()
 
-dataset = PreferenceDatasetNoDiscard(50)
-print(f"Dataset: {dataset}")
+ims = []
+for _ in range(10):
+    im1, = plt.plot([random.randrange(10), random.randrange(10)], [random.randrange(10), random.randrange(10)])
+    im2, = plt.plot([random.randrange(10), random.randrange(10)], [random.randrange(10), random.randrange(10)])
+    ims.append([im1, im2])
+ani = animation.ArtistAnimation(fig, ims)
 
-path = "02_12_rlhf_pref_dataset_local_1.pickle"
-a = dataset.load(path)
-print(f"Loaded: {len(a)}")
+plt.show()

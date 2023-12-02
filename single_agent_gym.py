@@ -324,15 +324,10 @@ class ReplayDiscreteGymSupervisor():
                 break
         
         if draw:
-            anim = self.sim.animate()
+            # anim = self.sim.animate()
+            anim = self.sim.frames, self.sim.fig, self.sim.ax
         else:
             anim = None
-
-        # NOTE: when implementing human fb, might have to replace block above by this one
-        # if draw:
-        #     anim = self.sim.frames
-        # else:
-        #     anim = None
 
         if train:
             if loss_nb == 0:
@@ -433,8 +428,7 @@ class ReplayDiscreteGymSupervisor():
     def generate_trajectories(self,
                 nb_traj = 100,
                 draw_freq=100,
-                max_steps=100,
-                success_rate_decay = 0.01):
+                max_steps=100):
         """
         Initialises trajectory buffer, and repeatedly (n_episodes) 
         calls episode_restart(train=False) to fill buffer.

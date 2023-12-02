@@ -2,6 +2,8 @@ import abc
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import animation
+import matplotlib
+from matplotlib.animation import ArtistAnimation, FuncAnimation
 
 
 class PreferenceGatherer(abc.ABC):
@@ -109,28 +111,27 @@ class HumanPreferenceGatherer(PreferenceGatherer):
         # TODO: implement human pref
 
         for trajectory_pair in trajectory_pairs:
-            anim1 = trajectory_pair[0].get_animation()
-            anim2 = trajectory_pair[1].get_animation()
+            # Retrieve animations
+            anim1, fig, ax = trajectory_pair[0].get_animation()
+            # frames = anim1._framedata
+            print(f"Animation: {type(anim1[0][0])}")
 
-            fig,_ = plt.subplots(1, 2)
-            print("anim: ", len(anim1))
+            # Add each polygon to the axis
+            # for polygon in anim1[0]:
+            #     if type(polygon) == matplotlib.patches.Polygon:
+            #         ax.add_patch(polygon)
 
-            # Create an animation that combines both animations with a 1-second pause
-            # combined_ani = animation.ArtistAnimation(
-            #     fig, [ani1, ani2, self.pause()], interval=0.1, blit=True, repeat=True
-            # )
-            sperframe= 0.1
-            ani = animation.ArtistAnimation(fig,[anim1, anim2], interval=sperframe*1000, blit=True)
+            ani = animation.ArtistAnimation(fig, anim1, interval=0.1*1000, blit=True)
+
+            # Show the plot
             plt.show()
-
-            # print("anim1: ", anim1)
-            # fig = plt.figure()
-            # gr.animate(fig, anim1)
+            break 
 
             # Get human pref -> TODO
             # pref = TODO
             # preferences.append(pref)
             
+            pass
         return np.array(preferences)
     
     def animate(fig, arts_list, sperframe=0.1):
