@@ -246,7 +246,9 @@ gym = ReplayDiscreteGymSupervisor(config,
             maxs = [30,20], # grid size
             logger = logger,
             reward_fun = reward_model.reward_array_features,
-            use_gabriel=False)
+            use_gabriel=False,
+            use_linear = LINEAR
+            )
 
 # Create Pair Generator
 if DISAGREEMENT:
@@ -290,7 +292,7 @@ else:
 pref_comparisons = PreferenceComparisons(
     gym,
     reward_model,
-    num_iterations=3,  # Set to 60 for better performance # TODO: PUT BACK
+    num_iterations=30,  # Set to 60 for better performance
     pair_generator=pair_generator,
     preference_gatherer=gatherer,
     reward_trainer=reward_trainer,
@@ -301,7 +303,7 @@ pref_comparisons = PreferenceComparisons(
     draw_freq=draw_freq,
     use_wandb=USE_WANDB,
     logger = logger,
-    comparison_queue_size=5, # TODO: PUT BACK
+    comparison_queue_size=50,
     dataset_path=PREF_DATASET_PATH
 )
 
@@ -310,27 +312,27 @@ logger.info("#######################")
 logger.info("REWARD TRAINING STARTED")
 logger.info("####################### \n")
 pref_comparisons.train(
-    total_timesteps=500, # 5000 # TODO: PUT BACK
-    total_comparisons=30, # 200 # TODO: PUT BACK
+    total_timesteps=5000, # 5000
+    total_comparisons=200, # 200
 )
 logger.debug("REWARD TRAINING ENDED \n \n")
 
-# # TRAIN AGENT ON LEARNED REWARD # TODO: PUT BACK
-# logger.info("\n \n ########################################")
-# logger.info("AGENT TRAINING ON LEARNED REWARD STARTED")
-# logger.info("######################################## \n")
-# pref_comparisons.gym.training(nb_episodes=70000, use_wandb = USE_WANDB)
-# logger.debug("AGENT TRAINING ON LEARNED REWARD ENDED \n \n")
-# if SAVE_AGENT:
-#     torch.save(pref_comparisons.gym.agent, TRAINED_AGENT, pickle_module=pickle)
+# TRAIN AGENT ON LEARNED REWARD # TODO: PUT BACK
+logger.info("\n \n ########################################")
+logger.info("AGENT TRAINING ON LEARNED REWARD STARTED")
+logger.info("######################################## \n")
+pref_comparisons.gym.training(nb_episodes=70000, use_wandb = USE_WANDB)
+logger.debug("AGENT TRAINING ON LEARNED REWARD ENDED \n \n")
+if SAVE_AGENT:
+    torch.save(pref_comparisons.gym.agent, TRAINED_AGENT, pickle_module=pickle)
 
-# # EVALUATE AGENT
-# logger.info("\n \n ########################")
-# logger.info("AGENT EVALUATION STARTED")
-# logger.info("######################## \n")
-# success_rate = pref_comparisons.gym.evaluate_agent(nb_trials=1000)
-# logger.info(f"Average success rate: {success_rate} \n \n")
-# logger.debug("AGENT EVALUATION ENDED")
+# EVALUATE AGENT
+logger.info("\n \n ########################")
+logger.info("AGENT EVALUATION STARTED")
+logger.info("######################## \n")
+success_rate = pref_comparisons.gym.evaluate_agent(nb_trials=1000)
+logger.info(f"Average success rate: {success_rate} \n \n")
+logger.debug("AGENT EVALUATION ENDED")
 
 # End wandb
 if USE_WANDB:

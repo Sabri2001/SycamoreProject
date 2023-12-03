@@ -63,7 +63,8 @@ class ReplayDiscreteGymSupervisor():
                  reward_fun = None,
                  use_wandb=False,
                  logger = None,
-                 use_gabriel=True
+                 use_gabriel=True,
+                 use_linear = True
             ):
         
         # wandb init
@@ -127,6 +128,7 @@ class ReplayDiscreteGymSupervisor():
 
         # Reward fun chosen (see def in relative_single_agent) 
         self.use_gabriel = use_gabriel
+        self.use_linear = use_linear
 
         if reward_fun is None:
             if config['reward']=='punitive':
@@ -285,7 +287,10 @@ class ReplayDiscreteGymSupervisor():
                 if self.use_gabriel:
                     reward = self.rewardf(action, valid, closer, success, failure, n_sides=n_sides, config=self.config)
                 else:
-                    reward = self.rewardf(reward_features)
+                    if self.use_linear:
+                        reward = self.rewardf(reward_features) # linear reward
+                    else:
+                        reward = self.rewardf(self.sim.grid) # cnn reward
                 
                 # Add reward to reward array (robot,step)
                 rewards_ar[idr,step]=reward

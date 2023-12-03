@@ -118,6 +118,9 @@ class LinearRewardTrainer(RewardTrainer):
 
         # Calculate reward values using the preference model
         proba_traj1 = self.preference_model.forward(trajectory_pair)
+        
+        print(f"Proba traj 1: {proba_traj1}")
+        print(f"Pref traj1: {torch.tensor(pref_traj1, dtype=torch.float32)}")
 
         # Compute the cross-entropy loss
         loss = self.loss_fn(proba_traj1, torch.tensor(pref_traj1, dtype=torch.float32))
@@ -205,7 +208,7 @@ class LinearRewardEnsembleTrainer(RewardTrainer):
 
 
 class RewardTrainerCNN(RewardTrainer):
-    def __init__(self, preference_model, gamma, learning_rate=0.001, logger=None):
+    def __init__(self, preference_model, gamma, learning_rate=0.0001, logger=None):
         self.preference_model = preference_model
         self.gamma = gamma
         self.logger = logger
@@ -214,7 +217,7 @@ class RewardTrainerCNN(RewardTrainer):
         self.loss_fn = nn.BCELoss()
 
         # Initialize the optimizer
-        self.optimmize = torch.optim.NAdam(self.preference_model.reward_model.parameters(),lr=learning_rate, weight_decay=0.0001)
+        self.optimizer = torch.optim.NAdam(self.preference_model.reward_model.parameters(),lr=learning_rate, weight_decay=0.0001)
 
     def train_step(self, trajectory_pair, pref_traj1):
         self.optimizer.zero_grad()
@@ -227,7 +230,6 @@ class RewardTrainerCNN(RewardTrainer):
 
         loss.backward()
         self.optimizer.step()
-        self.preference_model.normalize_reward()
 
         return loss.item()
 

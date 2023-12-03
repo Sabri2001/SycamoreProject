@@ -150,7 +150,6 @@ class PreferenceComparisons():
             if i == 0:
                 epoch_multip = self.initial_epoch_multiplier # default: 200
 
-            epoch_multip = 1.0 # TODO: PUT BACK
             self.logger.info("\n Training reward model")
             self.reward_trainer.train(self.dataset, epoch_multiplier=epoch_multip)
             self.logger.debug("Reward training finished")
@@ -166,7 +165,7 @@ class PreferenceComparisons():
                 num_steps += extra_timesteps
             
             self.logger.info("\n Training agent")
-            self.gym.training(nb_episodes=100) # TODO: PUT BACK
+            self.gym.training(nb_episodes=1000)
             self.logger.debug("Training finished")
     
         # if human feedback, save preferences

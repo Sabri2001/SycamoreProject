@@ -191,6 +191,7 @@ class RewardCNN(nn.Module):
                  n_robots,
                  n_regions,
                  config):
+        super().__init__()
         #unpack the config file
         n_fc_layer = config['SAC_n_fc_layer']
         n_neurons = config['SAC_n_neurons']
@@ -200,6 +201,8 @@ class RewardCNN(nn.Module):
                         'n_internal_layer':config['SEnc_n_internal_layer'],
                         'stride':config['SEnc_stride']}
         
+        self.state_encoder = None
+
         if config['SEnc_order_insensitive']:
             self.state_encoder = StateEncoderOE(maxs_grid,
                                           n_robots,
@@ -207,12 +210,12 @@ class RewardCNN(nn.Module):
                                           config['agent_last_only'],
                                           device=device,
                                           **encoder_args)
-
+            
         self.input_norm = nn.BatchNorm2d(self.state_encoder.out_dims[0],device=device)
         self.FC = nn.ModuleList([nn.Linear(np.prod(self.state_encoder.out_dims),n_neurons,device=device)])
         self.FC+=nn.ModuleList([nn.Linear(n_neurons,n_neurons,device=device) for i in range(n_fc_layer-1)])
         self.out_reward = nn.Linear(n_neurons,1,device=device) # output of size 1 for reward
-        self.sigmoid = nn.Sigmoid(device=device)
+        self.tanh = nn.Tanh()
         self.device=device
         self.batch_norm = batch_norm
         self.gamma = gamma
@@ -231,8 +234,8 @@ class RewardCNN(nn.Module):
                 rep = torch.flatten(self.state_encoder(grids),1)
             for layer in self.FC:
                 rep = F.relu(layer(rep))
-            reward = self.sigmoid(self.out_reward(rep))*5.40 # reward of same magnitude as Gab's
-            return reward
+            reward = self.tanh(self.out_reward(rep))*5.40 # reward of same magnitude as Gab's
+            return reward.view([])
 
     def reward_trajectory(self, trajectory):
         """Compute reward for a trajectory."""
@@ -243,10 +246,10 @@ class RewardCNN(nn.Module):
 
     def reward_transition(self, transition):
         grid = transition.new_state['grid']
-        return self.forward(grid)
+        return self.forward([grid])
 
     def reward_array_features(self, grid):
-        return self.forward(grid, inference=True)
+        return self.forward([grid], inference=True)
 
 
 class RewardNet(nn.Module, abc.ABC, RewardModel):
