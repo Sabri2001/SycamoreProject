@@ -249,3 +249,52 @@ class RewardTrainerCNN(RewardTrainer):
             if epoch % 50 == 0:
                 average_loss = total_loss / len(dataset)
                 self.logger.info(f"Epoch [{epoch + 1}/{num_epochs}] Loss: {average_loss:.4f}")
+
+
+class RewardTrainerCNNEnsemble(RewardTrainer):
+    def __init__(self, preference_model, gamma, learning_rate=0.0001, logger=None):
+        self.preference_model = preference_model
+        self.gamma = gamma
+        self.logger = logger
+
+        # Initialize the loss function
+        self.loss_fn = nn.BCELoss()
+        
+        # Initialize the optimizers
+        self.optimizer_list = []
+        for reward in preference_model.reward_model.reward_list:
+            self.optimizer_list.append(torch.optim.NAdam(reward.parameters(),lr=learning_rate, weight_decay=0.0001))
+
+    def train_step(self, trajectory_pair, pref_traj1, reward_nb):
+
+        self.optimizer_list[reward_nb].zero_grad()
+
+        # Calculate reward values using the preference model
+        proba_traj1 = self.preference_model.forward(trajectory_pair)
+
+        # Compute the cross-entropy loss
+        loss = self.loss_fn(proba_traj1, torch.tensor(pref_traj1, dtype=torch.float32))
+
+        loss.backward()
+        self.optimizer_list[reward_nb].step()
+
+        return loss.item()
+
+    def train(self, dataset, epoch_multiplier=1.):
+        num_epochs = int(epoch_multiplier * 1000)
+
+        for epoch in range(num_epochs):
+            total_loss = 0.0
+
+            for sample in dataset:
+                trajectory_pair, pref_traj1 = sample
+
+                for reward_nb in range(len(self.optimizer_list)):
+                    loss = self.train_step(trajectory_pair, pref_traj1, reward_nb)
+                    total_loss += loss
+
+            # Print the average loss for this epoch
+            if epoch % 50 == 0:
+                average_loss = total_loss / len(dataset) / len(self.optimizer_list)
+                self.logger.info(f"Epoch [{epoch + 1}/{num_epochs}] Loss: {average_loss:.4f}")
+

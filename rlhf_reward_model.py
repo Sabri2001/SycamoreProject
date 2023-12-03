@@ -252,6 +252,68 @@ class RewardCNN(nn.Module):
         return self.forward([grid], inference=True)
 
 
+class RewardCNNEnsemble(nn.Module):
+    def __init__(self,
+                 gamma,
+                 nb_rewards,
+                 logger,
+                 device,
+                 maxs_grid,
+                 n_robots,
+                 n_regions,
+                 config):
+        self.nb_rewards = nb_rewards
+        self.reward_list = [RewardCNN(gamma, logger, device, maxs_grid, n_robots, n_regions, config) for _ in range(nb_rewards)]
+        self.device = device
+        self.logger = logger
+        self.gamma = gamma
+
+    def reward_trajectory(self, trajectory):
+        """Compute reward for a trajectory."""
+        reward = 0
+        for i, transition in enumerate(trajectory):
+            reward += self.gamma ** i * self.reward_transition(transition)
+        return reward
+
+    def reward_transition(self, transition):
+        reward = 0
+        for reward_model in self.reward_list:
+            reward += reward_model.reward_transition(transition)
+        return reward/self.nb_rewards
+
+    def reward_array_features(self, grid):
+        reward = 0
+        for reward_model in self.reward_list:
+            reward += reward_model.reward_array_features(grid)
+        return reward/self.nb_rewards
+
+    def reward_disagreement(self, trajectory_pair):
+        # Compute reward for each traj according to each reward model
+        reward_ar = np.zeros((2,self.nb_rewards))
+        for traj_idx in range(2):
+            for i, transition in enumerate(trajectory_pair[traj_idx].get_transitions()):
+                reward_ar[traj_idx, :] += self.gamma ** i * self.reward_transition_per_reward(transition)
+
+        # Deduce preferences according to each reward model
+        pref_ar = np.zeros(self.nb_rewards)
+        for idx in range(self.nb_rewards):
+            if reward_ar[0, idx] > reward_ar[1,idx]:
+                pref_ar[idx] = 0
+            elif reward_ar[0, idx] < reward_ar[1,idx]:
+                pref_ar[idx] = 1
+            else:
+                pref_ar[idx] = 0.5
+
+        # Return std of preferences (= disagreement)
+        return np.std(pref_ar)
+    
+    def reward_transition_per_reward(self, transition):
+        reward_ar = np.zeros(self.nb_rewards)
+        for idx, reward_model in enumerate(self.reward_list):
+            reward_ar[idx] += reward_model.reward_transition(transition)
+        return reward_ar
+
+
 class RewardNet(nn.Module, abc.ABC, RewardModel):
     """Minimal abstract reward network.
 

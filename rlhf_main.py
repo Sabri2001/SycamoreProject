@@ -11,11 +11,11 @@ import pickle
 import torch
 
 from single_agent_gym import ReplayDiscreteGymSupervisor
-from rlhf_reward_model import RewardLinear, RewardLinearEnsemble, RewardCNN
+from rlhf_reward_model import RewardLinear, RewardLinearEnsemble, RewardCNN, RewardCNNEnsemble
 from rlhf_pair_generator import RandomPairGenerator, DisagreementPairGenerator
 from rlhf_preference_gatherer import SyntheticPreferenceGatherer, HumanPreferenceGatherer
 from rlhf_preference_model import PreferenceModel
-from rlhf_reward_trainer import LinearRewardTrainer, LinearRewardEnsembleTrainer, RewardTrainerCNN
+from rlhf_reward_trainer import LinearRewardTrainer, LinearRewardEnsembleTrainer, RewardTrainerCNN, RewardTrainerCNNEnsemble
 from rlhf_preference_comparisons import PreferenceComparisons
 
 
@@ -26,9 +26,9 @@ LOGGING = False
 REMOTE = False
 SAVE_AGENT = True
 LOGGING_LVL = "info"
-DISAGREEMENT = False
+DISAGREEMENT = True
 SAVE_PREFERENCES = True
-LINEAR = False
+LINEAR = False # linear or cnn reward
 
 if REMOTE:
     device = 'cuda'
@@ -205,7 +205,10 @@ if USE_WANDB:
 gamma = 1-config['agent_discount_f']
 nb_rewards = 3
 if DISAGREEMENT:
-    reward_model = RewardLinearEnsemble(gamma, nb_rewards, logger, device)
+    if LINEAR:
+        reward_model = RewardLinearEnsemble(gamma, nb_rewards, logger, device)
+    else:
+        reward_model = RewardCNNEnsemble(gamma, nb_rewards, logger, device, [30,20], 2, 2, config)
 else:
     if LINEAR:
         reward_model = RewardLinear(gamma, logger, device)
@@ -276,7 +279,10 @@ preference_model = PreferenceModel(reward_model)
 # Create Reward Trainer
 learning_rate = 0.0001
 if DISAGREEMENT:
-    reward_trainer = LinearRewardEnsembleTrainer(preference_model, gamma, learning_rate, logger)
+    if LINEAR:
+        reward_trainer = LinearRewardEnsembleTrainer(preference_model, gamma, learning_rate, logger)
+    else:
+        reward_trainer = RewardTrainerCNNEnsemble(preference_model, gamma, learning_rate, logger)
 else:
     if LINEAR:
         reward_trainer = LinearRewardTrainer(preference_model, gamma, learning_rate, logger)
