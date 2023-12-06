@@ -92,26 +92,30 @@ class RewardLinear(nn.Module):
 
     def reward_trajectory(self, trajectory):
         """Compute reward for a trajectory."""
-        reward = 0
+        reward = 0.
         for i, transition in enumerate(trajectory):
             reward += self.gamma ** i * self.reward_transition(transition)
         return reward
 
     def reward_transition(self, transition):
-        return torch.dot(th.Tensor.cpu(self.coeff), torch.tensor(transition.reward_features, dtype=torch.float32))
+        return torch.dot(self.coeff, transition.reward_features)
 
     def reward_array_features(self, reward_array):
-        return np.dot(th.Tensor.cpu(self.coeff).detach().numpy(), reward_array)
+        return torch.dot(self.coeff, reward_array)
     
     def get_reward_coeff(self):
         return np.array(th.Tensor.cpu(self.coeff.data))
 
     def normalize_reward(self):
-        if np.linalg.norm(th.Tensor.cpu(self.coeff.data)) > 5.40:
-            if self.device == 'cuda':
-                self.coeff.data = th.Tensor.cuda(th.Tensor.cpu(self.coeff.data)/np.linalg.norm(th.Tensor.cpu(self.coeff.data))*5.40) # same l2-norm as Gab's modular reward
-            elif self.device == 'cpu':
-                self.coeff.data = self.coeff.data/np.linalg.norm(self.coeff.data)*5.40
+        if self.device == 'cuda':
+            norm_factor = th.linalg.norm(self.coeff.data)
+            if norm_factor > 5.40: # same l2-norm as Gab's modular reward
+                self.coeff.data /= norm_factor * 5.40
+
+        elif self.device == 'cpu':
+            norm_factor = np.linalg.norm(self.coeff.data)
+            if norm_factor > 5.40: # same l2-norm as Gab's modular reward
+                self.coeff.data /= norm_factor * 5.40
 
 
 class RewardLinearEnsemble(nn.Module):
@@ -132,13 +136,13 @@ class RewardLinearEnsemble(nn.Module):
     def reward_transition(self, transition):
         reward = 0
         for reward_model in self.reward_list:
-            reward += torch.dot(th.Tensor.cpu(reward_model.coeff), torch.tensor(transition.reward_features, dtype=torch.float32))
+            reward += torch.dot(reward_model.coeff, transition.reward_features)
         return reward/self.nb_rewards
 
     def reward_array_features(self, reward_array):
         reward = 0
         for reward_model in self.reward_list:
-            reward += np.dot(th.Tensor.cpu(reward_model.coeff).detach().numpy(), reward_array)
+            reward += torch.dot(reward_model.coeff, reward_array)
         return reward/self.nb_rewards
     
     def get_reward_coeff(self):
@@ -149,15 +153,11 @@ class RewardLinearEnsemble(nn.Module):
 
     def normalize_reward(self):
         for reward_model in self.reward_list:
-            if np.linalg.norm(th.Tensor.cpu(reward_model.coeff.data)) > 5.40:
-                if self.device == 'cuda':
-                    reward_model.coeff.data = th.Tensor.cuda(th.Tensor.cpu(reward_model.coeff.data)/np.linalg.norm(th.Tensor.cpu(reward_model.coeff.data))*5.40) # same l2-norm as Gab's modular reward
-                elif self.device == 'cpu':
-                    reward_model.coeff.data = reward_model.coeff.data/np.linalg.norm(reward_model.coeff.data)*5.40
+            reward_model.normalize_reward()
 
     def reward_disagreement(self, trajectory_pair):
         # Compute reward for each traj according to each reward model
-        reward_ar = np.zeros((2,self.nb_rewards))
+        reward_ar = th.zeros((2,self.nb_rewards), device=self.device)
         for traj_idx in range(2):
             for i, transition in enumerate(trajectory_pair[traj_idx].get_transitions()):
                 reward_ar[traj_idx, :] += self.gamma ** i * self.reward_transition_per_reward(transition)
@@ -176,9 +176,9 @@ class RewardLinearEnsemble(nn.Module):
         return np.std(pref_ar)
     
     def reward_transition_per_reward(self, transition):
-        reward_ar = np.zeros(self.nb_rewards)
+        reward_ar = th.zeros(self.nb_rewards, device=self.device)
         for idx, reward_model in enumerate(self.reward_list):
-            reward_ar[idx] += torch.dot(th.Tensor.cpu(reward_model.coeff), torch.tensor(transition.reward_features, dtype=torch.float32))
+            reward_ar[idx] += torch.dot(reward_model.coeff, transition.reward_features)
         return reward_ar
 
 

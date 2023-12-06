@@ -56,6 +56,7 @@ class ReplayBufferGraph(Dataset):
         
         
         self.full = False
+    
     def push(self,graph,mask,action,new_graph,new_mask,reward,entropy=None):
         if entropy is not None:
             self.entropy[self.counter] = entropy 
@@ -108,8 +109,10 @@ class ReplayBufferGraph(Dataset):
 
                 self.nmask_out[i],
                 self.entropy[i])
+    
     def __len__(self):
         return self.counter
+    
     def sample(self,batch_size):
         if self.full:
             idxs = torch.randperm(self.max_l)

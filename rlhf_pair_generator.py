@@ -77,7 +77,7 @@ class DisagreementPairGenerator(PairGenerator):
 
         # Oversample pairs + compute disagreement (= std of preferences) for each
         for _ in range(num_pairs*pair_oversampling):
-            selected_trajectories = np.random.choice(trajectories, size=2, replace=True)
+            selected_trajectories = np.random.choice(trajectories, size=2, replace=False)
             trajectory_pairs.append(tuple(selected_trajectories))
             disagreement.append(self.reward_model.reward_disagreement(selected_trajectories))
 

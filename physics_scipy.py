@@ -46,6 +46,7 @@ class stability_solver_discrete():
         self.x_soft=None
         self.constraints = None
         # self.last_sol = np.zeros(0)
+    
     def set_max_forces(self,rid,Fx=None,Fy=None,M=None):
         if Fx is not None:
             self.b[rid*6]=Fx[1]
@@ -56,6 +57,7 @@ class stability_solver_discrete():
         if M is not None:
             self.b[rid*6+4]=M[1]
             self.b[rid*6+5]=-M[0]
+    
     def add_block(self,grid,block,bid,interfaces=None):
 
         #get all the potential supports:
@@ -209,6 +211,7 @@ class stability_solver_discrete():
                                                [0,0,1,-1,0,0],
                                                [-hold_pos_abs[1],hold_pos_abs[1],hold_pos_abs[0],-hold_pos_abs[0],1,-1]]
         return True
+    
     def leave_block(self,rid):
         self.Aeq[:,rid*6:(rid+1)*6]=0
         
@@ -240,6 +243,7 @@ class stability_solver_discrete():
             self.last_res = res
             
             return res
+    
     def reset(self):
         self.A = np.diag(np.ones(self.nr*6))
         self.b = self.b[:self.nr*6]

@@ -13,7 +13,7 @@ import os
 import wandb
 import numpy as np
 import pickle
-import torch
+import torch as th
 
 from discrete_blocks import discrete_block as Block
 from relative_single_agent import SACSupervisorSparse,generous_reward,punitive_reward,modular_reward
@@ -21,22 +21,22 @@ from discrete_simulator import DiscreteSimulator as Sim, Transition, Trajectory
 import discrete_graphics as gr
 
 # Define blocks
-hexagon = Block([[1,0,0],[1,1,1],[1,1,0],[0,2,1],[0,1,0],[0,1,1]],muc=0.5)
-triangle = Block([[0,0,1]],muc=0.5)
-link = Block([[0,0,0],[0,1,1],[1,0,0],[1,0,1],[1,1,1],[0,1,0]],muc=0.5)
+hexagon = Block([[1,0,0],[1,1,1],[1,1,0],[0,2,1],[0,1,0],[0,1,1]],muc=0.7)
+triangle = Block([[0,0,1]],muc=0.7)
+link = Block([[0,0,0],[0,1,1],[1,0,0],[1,0,1],[1,1,1],[0,1,0]],muc=0.7)
 
 # Set up wandb
 wandb_project = "sycamore"
 wandb_entity = "sabri-elamrani"
-USE_WANDB = False
+USE_WANDB = True
 
 # Save/wandb options
 SAVE = True
-TRAINED_AGENT = "26_11_trained_agent_gabriel_reward_remote.pt"
-NAME = "26_11_trained_agent_gabriel_reward_remote" # for wandb
+TRAINED_AGENT = "05_12_trained_agent_gabriel_reward_remote.pt"
+NAME = "05_12_trained_agent_gabriel_reward_remote" # for wandb
 
 # Other options
-NB_EPISODES = 70000
+NB_EPISODES = 40000
 REMOTE = False
 
 if REMOTE:
@@ -64,7 +64,8 @@ class ReplayDiscreteGymSupervisor():
                  use_wandb=False,
                  logger = None,
                  use_gabriel=True,
-                 use_linear = True
+                 use_linear = True,
+                 device = 'cpu'
             ):
         
         # wandb init
@@ -142,6 +143,9 @@ class ReplayDiscreteGymSupervisor():
 
         # Store config as attribute -> for access elsewhere
         self.config = config
+
+        # Select device
+        self.device = device
         
     def episode_restart(self,
                           max_steps,
@@ -280,17 +284,18 @@ class ReplayDiscreteGymSupervisor():
                     n_sides = []
                 
                 # Compute reward and reward features for this robot/step
-                reward_features = [int(bool(action)), int(closer), int(success), \
+                reward_features = th.tensor([int(bool(action)), int(closer), int(success), \
                                    int(failure), np.sum(n_sides), \
-                                    int(not np.all(np.logical_xor(n_sides[:3],n_sides[3:])))]
+                                    int(not np.all(np.logical_xor(n_sides[:3],n_sides[3:])))], \
+                                        dtype=th.float32, device=self.device)
                 
                 if self.use_gabriel:
                     reward = self.rewardf(action, valid, closer, success, failure, n_sides=n_sides, config=self.config)
                 else:
                     if self.use_linear:
-                        reward = self.rewardf(reward_features) # linear reward
+                        reward = self.rewardf(reward_features).detach().cpu().numpy() # linear reward
                     else:
-                        reward = self.rewardf(self.sim.grid) # cnn reward
+                        reward = self.rewardf(self.sim.grid).detach().cpu().numpy() # cnn reward
                 
                 # Add reward to reward array (robot,step)
                 rewards_ar[idr,step]=reward
@@ -329,8 +334,8 @@ class ReplayDiscreteGymSupervisor():
                 break
         
         if draw:
-            # anim = self.sim.animate()
-            anim = self.sim.frames, self.sim.fig, self.sim.ax
+            anim = self.sim.animate() # needed for wandb
+            # anim = self.sim.frames, self.sim.fig, self.sim.ax -> TODO: check whether needed for human fb
         else:
             anim = None
 
@@ -372,6 +377,14 @@ class ReplayDiscreteGymSupervisor():
         else:
             success_rate = 0 # fixed size => only need one
 
+        # for wandb logging
+        if log_dir is None:
+            if self.use_wandb:
+                log_dir = self.run.dir
+            else:
+                log_dir = os.path.join('log','log'+str(np.random.randint(10000000)))
+                os.mkdir(log_dir)
+
         # init transition buffer
         transition_buffer = np.empty(self.config['train_l_buffer'], dtype = object)
         buffer_count= 0
@@ -385,8 +398,7 @@ class ReplayDiscreteGymSupervisor():
             (rewards_ep, _,
              anim, transition_buffer, 
              buffer_count, success, gap, loss) = self.episode_restart(max_steps,
-                                                            #   draw = episode % draw_freq == 0, #draw_freq-1,
-                                                              draw = False, # temporary
+                                                              draw = episode % draw_freq == 0, #draw_freq-1,
                                                               transition_buffer=transition_buffer,
                                                               transition_buffer_count=buffer_count,
                                                               auto_leave=True
@@ -790,59 +802,20 @@ class ReplayDiscreteGymSupervisor():
 if __name__ == '__main__':
     print("Start gym")
     # config
-    # config = {'train_n_episodes':50000,
-    #         'train_l_buffer':200,
-    #         'ep_batch_size':32,
-    #         'ep_use_mask':True,
-    #         'agent_discount_f':0.1, # 1-gamma
-    #         'agent_last_only':True,
-    #         'reward': 'modular',
-    #         'torch_device': 'cuda',
-    #         'SEnc_n_channels':32, # 64
-    #         'SEnc_n_internal_layer':2,
-    #         'SEnc_stride':1,
-    #         'SEnc_order_insensitive':True,
-    #         'SAC_n_fc_layer':2, # 3
-    #         'SAC_n_neurons':64, # 128
-    #         'SAC_batch_norm':True,
-    #         'Q_duel':True,
-    #         'opt_lr':1e-4,
-    #         'opt_pol_over_val': 1,
-    #         'opt_tau': 5e-4,
-    #         'opt_weight_decay':0.0001,
-    #         'opt_exploration_factor':0.001,
-    #         'agent_exp_strat':'softmax',
-    #         'agent_epsilon':0.05, # not needed in sac
-    #         'opt_max_norm': 2,
-    #         'opt_target_entropy':0.5,
-    #         'opt_value_clip':False,
-    #         'opt_entropy_penalty':False,
-    #         'opt_Q_reduction': 'min',
-    #         'V_optimistic':False,
-    #         'reward_failure':-2,
-    #         'reward_action':{'Ph': -0.2},
-    #         'reward_closer':0.4,
-    #         'reward_nsides': 0.05,
-    #         'reward_success':5,
-    #         'reward_opposite_sides':0,
-    #         'opt_lower_bound_Vt':-2,
-    #         'gap_range':[2,6]
-    #         }
-   
     config = {'train_n_episodes':NB_EPISODES,
             'train_l_buffer':1000000,
-            'ep_batch_size':256,
+            'ep_batch_size':512,
             'ep_use_mask':True,
             'agent_discount_f':0.1, # 1-gamma
             'agent_last_only':True,
             'reward': 'modular',
             'torch_device': device,
             'SEnc_n_channels':64, # 64
-            'SEnc_n_internal_layer':6,
+            'SEnc_n_internal_layer':4,
             'SEnc_stride':1,
             'SEnc_order_insensitive':True,
             'SAC_n_fc_layer':3, # 3
-            'SAC_n_neurons':128, # 128
+            'SAC_n_neurons':64, # 128
             'SAC_batch_norm':True,
             'Q_duel':True,
             'opt_lr':1e-4,
@@ -865,31 +838,12 @@ if __name__ == '__main__':
             'reward_success':5,
             'reward_opposite_sides':0,
             'opt_lower_bound_Vt':-2,
-            'gap_range':[1,11]
+            'gap_range':[1,8] # so 1 to 7 actually
             }
 
     # Create various shapes from basic Block object
-    hexagon = Block([[1,0,0],[1,1,1],[1,1,0],[0,2,1],[0,1,0],[0,1,1]],muc=0.5)
-    linkr = Block([[0,0,0],[0,1,1],[1,0,0],[1,0,1],[1,1,1],[0,1,0]],muc=0.5) 
-    linkl = Block([[0,0,0],[0,1,1],[1,0,0],[0,1,0],[0,0,1],[-1,1,1]],muc=0.5) 
-    linkh = Block([[0,0,0],[0,1,1],[1,0,0],[-1,2,1],[0,1,0],[0,2,1]],muc=0.5)
-    #target = Block([[0,0,1],[1,0,1]])
+    hexagon = Block([[1,0,0],[1,1,1],[1,1,0],[0,2,1],[0,1,0],[0,1,1]],muc=0.7) # last one: friction coeff
     target = Block([[0,0,1]])
-
-    # Create gym
-    # gym = ReplayDiscreteGymSupervisor(config,
-    #           agent_type=SACSupervisorSparse,
-    #           use_wandb=USE_WANDB,
-    #           actions= ['Ph'], # place-hold only necessary action
-    #           block_type=[hexagon],
-    #           random_targets='random_gap', 
-    #           targets_loc=[[2,0],[6,0]], 
-    #           n_robots=2, 
-    #           max_blocks = 10,
-    #           targets=[target]*2,
-    #           max_interfaces = 50,
-    #           log_freq = 5,
-    #           maxs = [9,6]) # grid size
 
     # Set up wandb
     if USE_WANDB:
@@ -898,22 +852,26 @@ if __name__ == '__main__':
         run = wandb.init(project=wandb_project, entity=wandb_entity, name=NAME ,config=config)
         # config = wandb.config
 
+    # Create gym
     gym = ReplayDiscreteGymSupervisor(config,
               agent_type=SACSupervisorSparse,
               use_wandb=False,
               actions= ['Ph'], # place-hold only necessary action
-              block_type=[hexagon, linkh, linkr, linkl],
+              block_type=[hexagon],
               random_targets='random_gap', 
               targets_loc=[[2,0],[6,0]], 
               n_robots=2, 
-              max_blocks = 30,
+              max_blocks = 15,
               targets=[target]*2,
               max_interfaces = 100,
               log_freq = 5,
-              maxs = [30,20]) # grid size
+              maxs = [15,15]) # grid size
     
     # Run training/test
     t0 = time.perf_counter()
+    if USE_WANDB:
+        gym.use_wandb = True
+        gym.run = run
     anim = gym.training(max_steps = 20, draw_freq = 200, pfreq =10,
                          use_wandb=USE_WANDB, nb_episodes=NB_EPISODES) # draw and print freq
     #gym.test_gap()
@@ -924,7 +882,7 @@ if __name__ == '__main__':
     #         pickle.dump(gym.agent,input_file)
 
     if SAVE:
-        torch.save(gym.agent, TRAINED_AGENT, pickle_module=pickle)
+        th.save(gym.agent, TRAINED_AGENT, pickle_module=pickle)
 
     t1 = time.perf_counter()
     print(f"time spent: {t1-t0}s")

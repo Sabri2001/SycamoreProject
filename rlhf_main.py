@@ -8,7 +8,7 @@ import os
 import sys
 import wandb
 import pickle
-import torch
+import torch as th
 
 from single_agent_gym import ReplayDiscreteGymSupervisor
 from rlhf_reward_model import RewardLinear, RewardLinearEnsemble, RewardCNN, RewardCNNEnsemble
@@ -24,11 +24,12 @@ USE_WANDB = False
 HUMAN_FEEDBACK = False
 LOGGING = False
 REMOTE = False
-SAVE_AGENT = True
+SAVE_AGENT = False
 LOGGING_LVL = "info"
 DISAGREEMENT = True
-SAVE_PREFERENCES = True
-LINEAR = False # linear or cnn reward
+SAVE_PREFERENCES = False
+LINEAR = True # linear or cnn reward
+NB_EPISODES = 40000
 
 if REMOTE:
     device = 'cuda'
@@ -107,66 +108,24 @@ else:
     over_sampling = 1
 
 # blocks
-hexagon = Block([[1,0,0],[1,1,1],[1,1,0],[0,2,1],[0,1,0],[0,1,1]],muc=0.5)
-linkr = Block([[0,0,0],[0,1,1],[1,0,0],[1,0,1],[1,1,1],[0,1,0]],muc=0.5) 
-linkl = Block([[0,0,0],[0,1,1],[1,0,0],[0,1,0],[0,0,1],[-1,1,1]],muc=0.5) 
-linkh = Block([[0,0,0],[0,1,1],[1,0,0],[-1,2,1],[0,1,0],[0,2,1]],muc=0.5)
+hexagon = Block([[1,0,0],[1,1,1],[1,1,0],[0,2,1],[0,1,0],[0,1,1]],muc=0.7)
 target = Block([[0,0,1]])
 
 # config
-# config = {'train_n_episodes':100,
-#             'train_l_buffer':200,
-#             'ep_batch_size':32,
-#             'ep_use_mask':True,
-#             'agent_discount_f':0.1, # 1-gamma
-#             'agent_last_only':True,
-#             'reward': 'modular',
-#             'torch_device': device,
-#             'SEnc_n_channels':32, # 64
-#             'SEnc_n_internal_layer':2,
-#             'SEnc_stride':1,
-#             'SEnc_order_insensitive':True,
-#             'SAC_n_fc_layer':2, # 3
-#             'SAC_n_neurons':64, # 128
-#             'SAC_batch_norm':True,
-#             'Q_duel':True,
-#             'opt_lr':1e-4,
-#             'opt_pol_over_val': 1,
-#             'opt_tau': 5e-4,
-#             'opt_weight_decay':0.0001,
-#             'opt_exploration_factor':0.001,
-#             'agent_exp_strat':'softmax',
-#             'agent_epsilon':0.05, # not needed in sac
-#             'opt_max_norm': 2,
-#             'opt_target_entropy':0.5,
-#             'opt_value_clip':False,
-#             'opt_entropy_penalty':False,
-#             'opt_Q_reduction': 'min',
-#             'V_optimistic':False,
-#             'reward_failure':-2,
-#             'reward_action':{'Ph': -0.2},
-#             'reward_closer':0.4,
-#             'reward_nsides': 0.05,
-#             'reward_success':5,
-#             'reward_opposite_sides':0,
-#             'opt_lower_bound_Vt':-2,
-#             'gap_range':[2,6]
-#             }
-
-config = {'train_n_episodes':70000,
-            'train_l_buffer':200,
-            'ep_batch_size':256,
+config = {'train_n_episodes':NB_EPISODES,
+            'train_l_buffer':1000000,
+            'ep_batch_size':512,
             'ep_use_mask':True,
             'agent_discount_f':0.1, # 1-gamma
             'agent_last_only':True,
             'reward': 'modular',
             'torch_device': device,
             'SEnc_n_channels':64, # 64
-            'SEnc_n_internal_layer':6,
+            'SEnc_n_internal_layer':4,
             'SEnc_stride':1,
             'SEnc_order_insensitive':True,
             'SAC_n_fc_layer':3, # 3
-            'SAC_n_neurons':128, # 128
+            'SAC_n_neurons':64, # 128
             'SAC_batch_norm':True,
             'Q_duel':True,
             'opt_lr':1e-4,
@@ -189,10 +148,9 @@ config = {'train_n_episodes':70000,
             'reward_success':5,
             'reward_opposite_sides':0,
             'opt_lower_bound_Vt':-2,
-            'gap_range':[1,11]
-            }
+            'gap_range':[1,8] # so 1 to 7 actually
+            }# Set up wandb
 
-# Set up wandb
 if USE_WANDB:
     wandb_project = "sycamore"
     wandb_entity = "sabri-elamrani"
@@ -208,49 +166,32 @@ if DISAGREEMENT:
     if LINEAR:
         reward_model = RewardLinearEnsemble(gamma, nb_rewards, logger, device)
     else:
-        reward_model = RewardCNNEnsemble(gamma, nb_rewards, logger, device, [30,20], 2, 2, config)
+        reward_model = RewardCNNEnsemble(gamma, nb_rewards, logger, device, [15,15], 2, 2, config)
 else:
     if LINEAR:
         reward_model = RewardLinear(gamma, logger, device)
     else:
-        reward_model = RewardCNN(gamma, logger, device, [30,20], 2, 2, config)
+        reward_model = RewardCNN(gamma, logger, device, [15,15], 2, 2, config)
 
 # Create Gym (env + agent)
-# gym = ReplayDiscreteGymSupervisor(config,
-            #   agent_type=SACSupervisorSparse,
-            #   use_wandb=False, # wandb set up elsewhere
-            #   actions= ['Ph'], # place-hold only necessary action
-            #   block_type=[hexagon],
-            #   random_targets='random_gap', 
-            #   targets_loc=[[2,0],[6,0]], 
-            #   n_robots=2, 
-            #   max_blocks = 10,
-            #   targets=[target]*2,
-            #   max_interfaces = 50,
-            #   log_freq = 5, # grid size
-            #   maxs = [9,6],
-            #   logger = logger,
-            #   reward_fun = reward_model.reward_array_features,
-            #   use_gabriel=False # not using Gabriel's reward fun
-            #   )
-
 gym = ReplayDiscreteGymSupervisor(config,
             agent_type=SACSupervisorSparse,
             use_wandb=False,
             actions= ['Ph'], # place-hold only necessary action
-            block_type=[hexagon, linkh, linkr, linkl],
+            block_type=[hexagon],
             random_targets='random_gap', 
             targets_loc=[[2,0],[6,0]], 
             n_robots=2, 
-            max_blocks = 30,
+            max_blocks = 15,
             targets=[target]*2,
             max_interfaces = 100,
             log_freq = 5,
-            maxs = [30,20], # grid size
+            maxs = [15,15], # grid size
             logger = logger,
             reward_fun = reward_model.reward_array_features,
             use_gabriel=False,
-            use_linear = LINEAR
+            use_linear = LINEAR,
+            device=device
             )
 
 # Create Pair Generator
@@ -263,21 +204,22 @@ else:
 if HUMAN_FEEDBACK:
     gatherer = HumanPreferenceGatherer()
 else:
-    coeff = np.array([
+    coeff = th.tensor([
                 config['reward_action']['Ph'],
                 config['reward_closer'],
                 config['reward_success'],
                 config['reward_failure'],
                 config['reward_nsides'],
                 config['reward_opposite_sides']
-                ])
-    gatherer = SyntheticPreferenceGatherer(coeff, gamma)
+                ], device=device, dtype=th.float32)
+    gatherer = SyntheticPreferenceGatherer(coeff, gamma, device)
 
 # Create Preference Model
 preference_model = PreferenceModel(reward_model)
 
 # Create Reward Trainer
 learning_rate = 0.0001
+
 if DISAGREEMENT:
     if LINEAR:
         reward_trainer = LinearRewardEnsembleTrainer(preference_model, gamma, learning_rate, logger)
@@ -298,7 +240,7 @@ else:
 pref_comparisons = PreferenceComparisons(
     gym,
     reward_model,
-    num_iterations=30,  # Set to 60 for better performance
+    num_iterations=20,  # Set to 60 for better performance
     pair_generator=pair_generator,
     preference_gatherer=gatherer,
     reward_trainer=reward_trainer,
@@ -309,8 +251,9 @@ pref_comparisons = PreferenceComparisons(
     draw_freq=draw_freq,
     use_wandb=USE_WANDB,
     logger = logger,
-    comparison_queue_size=50,
-    dataset_path=PREF_DATASET_PATH
+    comparison_queue_size=100,
+    dataset_path=PREF_DATASET_PATH,
+    device = device
 )
 
 # TRAIN REWARD
@@ -319,18 +262,21 @@ logger.info("REWARD TRAINING STARTED")
 logger.info("####################### \n")
 pref_comparisons.train(
     total_timesteps=5000, # 5000
-    total_comparisons=200, # 200
+    total_comparisons=400, # 200
 )
 logger.debug("REWARD TRAINING ENDED \n \n")
 
-# TRAIN AGENT ON LEARNED REWARD # TODO: PUT BACK
+# TRAIN AGENT ON LEARNED REWARD
 logger.info("\n \n ########################################")
 logger.info("AGENT TRAINING ON LEARNED REWARD STARTED")
 logger.info("######################################## \n")
-pref_comparisons.gym.training(nb_episodes=70000, use_wandb = USE_WANDB)
+if USE_WANDB:
+    pref_comparisons.gym.use_wandb = USE_WANDB
+    pref_comparisons.gym.run = run
+pref_comparisons.gym.training(nb_episodes=NB_EPISODES, use_wandb = USE_WANDB)
 logger.debug("AGENT TRAINING ON LEARNED REWARD ENDED \n \n")
 if SAVE_AGENT:
-    torch.save(pref_comparisons.gym.agent, TRAINED_AGENT, pickle_module=pickle)
+    th.save(pref_comparisons.gym.agent, TRAINED_AGENT, pickle_module=pickle)
 
 # EVALUATE AGENT
 logger.info("\n \n ########################")

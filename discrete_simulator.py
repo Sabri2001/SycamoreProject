@@ -108,7 +108,7 @@ class DiscreteSimulator():
         self.prev = None
     
     def setup_anim(self,h=6):
-        plt.close('all')
+        # plt.close('all')
         self.frames = []
         h = 5 # test
         self.fig, self.ax = gr.draw_grid([30,12],color='none',h=h) # [30, 12]

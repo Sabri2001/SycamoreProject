@@ -16,6 +16,8 @@ import torch_geometric.transforms as T
 import numpy as np
 import copy
 import wandb
+
+
 class ReplayBufferSingleAgent():
     def __init__(self,length,action_list,side_sup,side_b,fully_connected = False,device='cpu',use_mask = False):
         self.states =  [None]*length
@@ -99,6 +101,8 @@ class ReplayBufferSingleAgent():
             nmask_minibatch = [self.nmasks[i] for i in idx]
             return (states_minibatch,actions_minibatch,nstates_minibatch,rewards_minibatch,terminal_minibatch,mask_minibatch,nmask_minibatch)
         return (states_minibatch,actions_minibatch,nstates_minibatch,rewards_minibatch,terminal_minibatch)
+
+
 def create_dense_graph(sim,robot_to_act,action_list,device,oriented_sides_sup,oriented_sides_b,last_only=True,empty=False):
     graph = HeteroData()
     if empty:
@@ -377,6 +381,7 @@ def create_sparse_graph(sim,robot_to_act,action_list,device,oriented_sides_sup,o
         graph = T.AddSelfLoops()(graph)
         graph = T.ToUndirected()(graph)
         return graph
+
 def build_hetero_GNN(config,simulator,rid,action_list,sides_sup,sides_b, empty=False):
     sample_data = create_sparse_graph(simulator,rid,action_list,config['torch_device'],sides_sup,sides_b,last_only=False)
     if config['GNN_arch']=='ResNet':
@@ -393,6 +398,8 @@ def build_hetero_GNN(config,simulator,rid,action_list,sides_sup,sides_b, empty=F
         with torch.no_grad():  # Initialize lazy modules.
             out = model(sample_data.x_dict, sample_data.edge_index_dict)
     return model
+
+
 class GATskip(torch.nn.Module):
     def __init__(self,
                  config,

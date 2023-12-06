@@ -41,7 +41,8 @@ class PreferenceComparisons():
         draw_freq = 100,
         use_wandb = False,
         logger = None,
-        dataset_path = None
+        dataset_path = None,
+        device = None
     ):
         
         # Init all attributes
@@ -66,7 +67,7 @@ class PreferenceComparisons():
             raise ValueError(f"Unknown query schedule: {query_schedule}")
 
         # Init preference dataset
-        self.dataset = PreferenceDatasetNoDiscard(max_size=comparison_queue_size)
+        self.dataset = PreferenceDatasetNoDiscard(max_size=comparison_queue_size, device=device)
         self.dataset_path = dataset_path
 
         # Init gym

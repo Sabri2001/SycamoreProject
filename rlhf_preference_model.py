@@ -88,7 +88,7 @@ class PreferenceModel(nn.Module):
     def normalize_reward(self):
         self.reward_model.normalize_reward()
 
-    def forward(self, trajectory_pair):
+    def forward(self, trajectory_pair, reward_nb = None):
         """
         Computes the preference probability of the first trajectory for all pairs, 
         using softmax.
@@ -102,8 +102,12 @@ class PreferenceModel(nn.Module):
         """
         traj1 = trajectory_pair[0].get_transitions()
         traj2 = trajectory_pair[1].get_transitions()
-        reward1 = self.reward_model.reward_trajectory(traj1)
-        reward2 = self.reward_model.reward_trajectory(traj2)
+        if reward_nb: # reward ensemble
+            reward1 = self.reward_model.reward_list[reward_nb].reward_trajectory(traj1)
+            reward2 = self.reward_model.reward_list[reward_nb].reward_trajectory(traj2)
+        else:
+            reward1 = self.reward_model.reward_trajectory(traj1)
+            reward2 = self.reward_model.reward_trajectory(traj2)
         proba = self.probability(reward1, reward2)
         return proba
 

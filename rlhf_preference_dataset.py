@@ -1,6 +1,8 @@
 import numpy as np
 import pickle
 from imitation.data.types import AnyPath
+import torch as th
+import random
 
 
 class PreferenceDataset():
@@ -78,7 +80,7 @@ class PreferenceDatasetNoDiscard():
     method.
     """
 
-    def __init__(self, max_size=50) -> None:
+    def __init__(self, max_size=50, device = None):
         """Builds an empty PreferenceDataset.
 
         Args:
@@ -90,18 +92,18 @@ class PreferenceDatasetNoDiscard():
         # Complete set for saving (no discarding)
         self.traj_list1 = []
         self.traj_list2 = []
-        self.preferences: np.ndarray = np.array([])
+        self.preferences = th.tensor([], device=device)
 
         self.max_size = max_size
         # Preferences to consider in reward training
         self.current_traj_list1 = []
         self.current_traj_list2 = []
-        self.current_preferences: np.ndarray = np.array([])
+        self.current_preferences = th.tensor([], device=device)
 
     def push(
         self,
-        pairs: [],
-        preferences: np.ndarray,
+        pairs,
+        preferences
     ):
         """Add more samples to the dataset.
 
@@ -113,7 +115,7 @@ class PreferenceDatasetNoDiscard():
 
         self.traj_list1.extend(traj_list1)
         self.traj_list2.extend(traj_list2)
-        self.preferences = np.concatenate((self.preferences, preferences))
+        self.preferences = th.cat([self.preferences, preferences], dim=0)
 
         # Only consider latest max_size samples for reward training
         if self.max_size is not None:
@@ -134,6 +136,31 @@ class PreferenceDatasetNoDiscard():
         assert len(self.current_traj_list1) == len(self.current_traj_list2) == len(self.current_preferences)
         return len(self.current_traj_list1)
 
+    def sample(self, batch_size=32):
+        """Randomly sample items from the dataset.
+
+        Args:
+            batch_size: Number of samples to randomly select.
+
+        Returns:
+            Iterator: An iterator over tuples containing the sampled pairs of trajectories and preferences.
+        """
+        if len(self.current_traj_list1) <= batch_size:
+            # If the dataset size is smaller than the batch_size, sample the entire dataset
+            sampled_indices = list(range(len(self.current_traj_list1)))
+        else:
+            # Randomly sample batch_size indices without replacement
+            sampled_indices = random.sample(range(len(self.current_traj_list1)), batch_size)
+
+        # Use the sampled indices to create an iterator over corresponding samples
+        sampled_data_iter = iter(
+            ((self.current_traj_list1[i], self.current_traj_list2[i]), self.current_preferences[i])
+            for i in sampled_indices
+        )
+
+        return sampled_data_iter
+
+    # TODO: check that dumping although some data for other device not issue... (torch.save instead?)
     def save(self, path: AnyPath):
         with open(path, "wb") as file:
             pickle.dump(self, file)

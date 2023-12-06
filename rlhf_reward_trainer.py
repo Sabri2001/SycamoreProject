@@ -118,26 +118,23 @@ class LinearRewardTrainer(RewardTrainer):
 
         # Calculate reward values using the preference model
         proba_traj1 = self.preference_model.forward(trajectory_pair)
-        
-        print(f"Proba traj 1: {proba_traj1}")
-        print(f"Pref traj1: {torch.tensor(pref_traj1, dtype=torch.float32)}")
 
         # Compute the cross-entropy loss
-        loss = self.loss_fn(proba_traj1, torch.tensor(pref_traj1, dtype=torch.float32))
+        loss = self.loss_fn(proba_traj1, pref_traj1)
 
         loss.backward()
         self.optimizer.step()
         self.preference_model.normalize_reward()
 
-        return loss.item()
+        return loss.detach().cpu().numpy()
 
     def train(self, dataset, epoch_multiplier=1.):
         num_epochs = int(epoch_multiplier * 1000)
 
         for epoch in range(num_epochs):
-            total_loss = 0.0
-
-            for sample in dataset:
+            total_loss = 0.
+            
+            for sample in dataset.sample(batch_size=32):
                 trajectory_pair, pref_traj1 = sample
 
                 loss = self.train_step(trajectory_pair, pref_traj1)
@@ -148,8 +145,6 @@ class LinearRewardTrainer(RewardTrainer):
                 average_loss = total_loss / len(dataset)
                 self.logger.info(f"Epoch [{epoch + 1}/{num_epochs}] Loss: {average_loss:.4f}")
                 self.logger.info(f"   --->  Reward coeff: {self.preference_model.get_reward_coeff()}")
-
-        self.logger.info(f"---> Current reward coefficients: {torch.Tensor.cpu(self.preference_model.reward_model.coeff).detach().numpy()}")
 
 
 class LinearRewardEnsembleTrainer(RewardTrainer):
@@ -171,17 +166,17 @@ class LinearRewardEnsembleTrainer(RewardTrainer):
         self.optimizer_list[reward_nb].zero_grad()
 
         # Calculate reward values using the preference model
-        proba_traj1 = self.preference_model.forward(trajectory_pair) # TODO: reward_nb
+        proba_traj1 = self.preference_model.forward(trajectory_pair, reward_nb)
 
         # Compute the cross-entropy loss
-        loss = self.loss_fn(proba_traj1, torch.tensor(pref_traj1, dtype=torch.float32))
+        loss = self.loss_fn(proba_traj1, pref_traj1)
 
         loss.backward()
         self.optimizer_list[reward_nb].step()
 
         self.preference_model.normalize_reward()
 
-        return loss.item()
+        return loss.detach().cpu().numpy()
     
     def train(self, dataset, epoch_multiplier=1.):
         num_epochs = int(epoch_multiplier * 1000)
@@ -189,10 +184,10 @@ class LinearRewardEnsembleTrainer(RewardTrainer):
         for epoch in range(num_epochs):
             total_loss = 0.0
 
-            for sample in dataset:
-                trajectory_pair, pref_traj1 = sample
-                
-                for reward_nb in range(len(self.optimizer_list)):
+            for reward_nb in range(len(self.optimizer_list)):
+                for sample in dataset.sample(batch_size=32):
+                    trajectory_pair, pref_traj1 = sample
+
                     loss = self.train_step(trajectory_pair, pref_traj1, reward_nb)
                     total_loss += loss
 
@@ -202,9 +197,6 @@ class LinearRewardEnsembleTrainer(RewardTrainer):
                 self.logger.info(f"Epoch [{epoch + 1}/{num_epochs}] Loss: {average_loss:.4f}")
                 for i in range(len(self.optimizer_list)):
                     self.logger.info(f"   --->  Reward coeff {i}: {self.preference_model.get_reward_coeff()[i]}")
-
-        for i in range(len(self.optimizer_list)):
-            self.logger.info(f"---> Current reward coefficients {i}: {self.preference_model.get_reward_coeff()[i]}")
 
 
 class RewardTrainerCNN(RewardTrainer):
@@ -226,7 +218,7 @@ class RewardTrainerCNN(RewardTrainer):
         proba_traj1 = self.preference_model.forward(trajectory_pair)
 
         # Compute the cross-entropy loss
-        loss = self.loss_fn(proba_traj1, torch.tensor(pref_traj1, dtype=torch.float32))
+        loss = self.loss_fn(proba_traj1, pref_traj1)
 
         loss.backward()
         self.optimizer.step()
@@ -239,7 +231,7 @@ class RewardTrainerCNN(RewardTrainer):
         for epoch in range(num_epochs):
             total_loss = 0.0
 
-            for sample in dataset:
+            for sample in dataset.sample(batch_size=32):
                 trajectory_pair, pref_traj1 = sample
 
                 loss = self.train_step(trajectory_pair, pref_traj1)
@@ -273,7 +265,7 @@ class RewardTrainerCNNEnsemble(RewardTrainer):
         proba_traj1 = self.preference_model.forward(trajectory_pair)
 
         # Compute the cross-entropy loss
-        loss = self.loss_fn(proba_traj1, torch.tensor(pref_traj1, dtype=torch.float32))
+        loss = self.loss_fn(proba_traj1, pref_traj1)
 
         loss.backward()
         self.optimizer_list[reward_nb].step()
@@ -286,10 +278,10 @@ class RewardTrainerCNNEnsemble(RewardTrainer):
         for epoch in range(num_epochs):
             total_loss = 0.0
 
-            for sample in dataset:
-                trajectory_pair, pref_traj1 = sample
+            for reward_nb in range(len(self.optimizer_list)):
+                for sample in dataset.sample(batch_size=32):
+                    trajectory_pair, pref_traj1 = sample
 
-                for reward_nb in range(len(self.optimizer_list)):
                     loss = self.train_step(trajectory_pair, pref_traj1, reward_nb)
                     total_loss += loss
 

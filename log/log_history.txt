@@ -113,17 +113,35 @@ TARGET ENTROPY NOW 0.5
 	
 02/12
 - Regular agent training with Gabriel's reward (gap1-11) -> remote (70k epi)
-	agent: 01_12_trained_agent_gabriel_reward_remote.pt
-	wandb: 01_12_trained_agent_gabriel_reward_remote	
+	agent: 02_12_trained_agent_gabriel_reward_remote.pt
+	wandb: 02_12_trained_agent_gabriel_reward_remote	
 	
 - RLHF synthetic fb, 600 comparisons, pref dataset max size 50, 30 rounds, 5000 iter
-	log: 01_12_synth_fb_remote_1
-	agent: 01_12_trained_agent_learned_reward_learning_remote_1.pt (70k epi)
-	wandb: 01_12_synthetic_feedback_remote_1
+	log: 02_12_synth_fb_remote_1
+	agent: 02_12_trained_agent_learned_reward_learning_remote_1.pt (70k epi)
+	wandb: 02_12_synthetic_feedback_remote_1
 	
 - RLHF synthetic fb, 600 comparisons, pref dataset max size 50, 30 rounds, DISAGREEMENT
-	log: 01_12_synth_fb_remote_2
-	agent: 01_12_trained_agent_learned_reward_learning_remote_2.pt (70k epi)	
-	wandb: 01_12_synthetic_feedback_remote_2
+	log: 02_12_synth_fb_remote_2
+	agent: 02_12_trained_agent_learned_reward_learning_remote_2.pt (70k epi)
 	
+	
+05/12
+- Regular agent training with Gabriel's reward (gap1-7) -> remote (40k epi)
+	agent: 05_12_trained_agent_gabriel_reward_remote.pt
+	wandb: 05_12_trained_agent_gabriel_reward_remote	
+	
+- RLHF synthetic fb, 400 comparisons, pref dataset max size 100, batch32, 20 rounds, 5000 iter, LINEAR
+	log: 05_12_synth_fb_remote_1
+	agent: 05_12_trained_agent_learned_reward_learning_remote_1.pt (40k epi)
+	wandb: 05_12_synthetic_feedback_remote_1
+	
+- RLHF synthetic fb, 400 comparisons, pref dataset max size 100, batch32 20 rounds, 5000 iter, LINEAR + DISAGREEMENT
+	log: 05_12_synth_fb_remote_2
+	agent: 05_12_trained_agent_learned_reward_learning_remote_2.pt (40k epi)
+	wandb: 05_12_synthetic_feedback_remote_1
+
+	
+
+
 	
