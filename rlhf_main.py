@@ -1,5 +1,4 @@
 # IMPORTS
-import numpy as np
 from discrete_blocks import discrete_block as Block
 from relative_single_agent import SACSupervisorSparse
 import logging
@@ -20,16 +19,19 @@ from rlhf_preference_comparisons import PreferenceComparisons
 
 
 # CONSTANTS
-USE_WANDB = False
+USE_WANDB = True
 HUMAN_FEEDBACK = False
-LOGGING = False
-REMOTE = False
-SAVE_AGENT = False
+LOGGING = True
+REMOTE = True
+SAVE_AGENT = True
 LOGGING_LVL = "info"
-DISAGREEMENT = True
-SAVE_PREFERENCES = False
+DISAGREEMENT = False
+SAVE_PREFERENCES = True
 LINEAR = True # linear or cnn reward
-NB_EPISODES = 40000
+NB_EPISODES = 20000
+
+if USE_WANDB:
+    LOGGING = True
 
 if REMOTE:
     device = 'cuda'
@@ -194,6 +196,9 @@ gym = ReplayDiscreteGymSupervisor(config,
             device=device
             )
 
+if USE_WANDB:
+   gym.run = run
+
 # Create Pair Generator
 if DISAGREEMENT:
     pair_generator = DisagreementPairGenerator(reward_model)
@@ -218,7 +223,10 @@ else:
 preference_model = PreferenceModel(reward_model)
 
 # Create Reward Trainer
-learning_rate = 0.0001
+if LINEAR:
+    learning_rate = 0.0001
+else:
+    learning_rate = 0.00003
 
 if DISAGREEMENT:
     if LINEAR:
@@ -262,7 +270,7 @@ logger.info("REWARD TRAINING STARTED")
 logger.info("####################### \n")
 pref_comparisons.train(
     total_timesteps=5000, # 5000
-    total_comparisons=400, # 200
+    total_comparisons=400, # 200 (I put 400) # TODO: put back
 )
 logger.debug("REWARD TRAINING ENDED \n \n")
 
@@ -272,7 +280,7 @@ logger.info("AGENT TRAINING ON LEARNED REWARD STARTED")
 logger.info("######################################## \n")
 if USE_WANDB:
     pref_comparisons.gym.use_wandb = USE_WANDB
-    pref_comparisons.gym.run = run
+    # pref_comparisons.gym.run = run
 pref_comparisons.gym.training(nb_episodes=NB_EPISODES, use_wandb = USE_WANDB)
 logger.debug("AGENT TRAINING ON LEARNED REWARD ENDED \n \n")
 if SAVE_AGENT:

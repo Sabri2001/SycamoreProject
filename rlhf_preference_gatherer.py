@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import animation
 import torch as th
+import tkinter as tk
 
 import discrete_graphics as gr
 
@@ -110,29 +111,28 @@ class HumanPreferenceGatherer(PreferenceGatherer):
         """
         preferences = th.tensor([])
 
-        # TODO: implement human pref
-
         for trajectory_pair in trajectory_pairs:
             # Retrieve animations
-            # plt.ioff()
             anim1, fig1, ax1 = trajectory_pair[0].get_animation()
-            print(f"Number {fig1.number}")
+            # print(f"Number {fig1.number}")
             ani1 = gr.animate(fig1, anim1)
+            fig1.show()
 
             # plt.show()
 
             anim2, fig2, ax2 = trajectory_pair[1].get_animation()
-            fig2.number=2
             print(f"Number {fig2.number}")
             print(f"Number {fig1.number}")
             ani2 = gr.animate(fig2, anim2)
             print(f"ANI1: {ani1}")
             print(f"ANI2: {ani2}")
 
-            # fig = plt.figure()
-            # sfigs = fig.subfigures(2,1)
-            # sfigs[0] = fig1
-            # sfigs[1] = fig2
+            fig2.show()
+
+            window = tk.Tk()
+            greeting = tk.Label(text='hello')
+            greeting.pack()
+            window.mainloop()
 
             # [ax1.add_artist(artist) for artist in anim1[-1]]
 
@@ -150,48 +150,10 @@ class HumanPreferenceGatherer(PreferenceGatherer):
 
             print(f"PLT: {plt.get_fignums()}")
 
-            # interactive(False)
-            plt.show()
+            #plt.show()
 
-            # anim2, fig2, ax2 = trajectory_pair[1].get_animation()
-            # animate2 = gr.animate(fig2, anim2)
-            # fig2.show()
-
-            # anim2, fig2, ax2 = trajectory_pair[1].get_animation()
-            # anim2.show()
-            # anim2, fig2, ax = trajectory_pair[1].get_animation()
-
-            # buf = io.BytesIO()
-            # pickle.dump(anim1, buf)
-            # buf.seek(0)
-            # new_anim1 = pickle.load(buf)
-
-            # new_fig, axes = plt.subplots(2,1)
-            # [ax1.add_artist(artist) for artist in anim1[-1]]
-            # [axes[1].add_artist(artist) for artist in new_anim1[-1]]
-
-            # Add each polygon to the axis
-            # for polygon in anim1[0]:
-            #     if type(polygon) == matplotlib.patches.Polygon:
-            #         ax.add_patch(polygon)
-
-            # ani = animation.ArtistAnimation(fig, anim1, interval=0.1*1000, blit=True)
-
-            # Show the plot
-            plt.show()
-            # plt.pause(1)
             break 
 
-            # Get human pref -> TODO
-            # pref = TODO
-            # preferences.append(pref)
-            
-            pass
+        plt.close('all')
         return np.array(preferences)
     
-    def animate(fig, arts_list, sperframe=0.1):
-        ani = animation.ArtistAnimation(fig, arts_list, interval=sperframe * 1000, blit=True)
-        return ani
-
-    # Define a function for the pause
-    # TODO  

@@ -48,7 +48,7 @@ class RandomPairGenerator(PairGenerator):
 
         for _ in range(num_pairs):
             # Randomly select two trajectories from the list of trajectories
-            selected_trajectories = np.random.choice(trajectories, size=2, replace=True)
+            selected_trajectories = np.random.choice(trajectories, size=2, replace=False)
             trajectory_pairs.append(tuple(selected_trajectories))
 
         return trajectory_pairs

@@ -119,10 +119,11 @@ class PreferenceComparisons():
             self.logger.info(f"Collecting {nb_traj} trajectories")
             trajectories, success_rate = self.gym.generate_trajectories(nb_traj, draw_freq=self.draw_freq)
             self.logger.debug(f"Nb of trajectories generated: {len(trajectories)}")
+            self.logger.info(f"Success rate: {success_rate}")
 
-            # wandb
             if self.use_wandb:
-                wandb.log({'reward_learning_success_rates':success_rate})
+                print("test")
+                wandb.log({"test": 2})
 
             # Create pairs of trajectories (to be compared)
             self.logger.info("Creating trajectory pairs")
@@ -150,7 +151,7 @@ class PreferenceComparisons():
             epoch_multip = 1.0
             if i == 0:
                 epoch_multip = self.initial_epoch_multiplier # default: 200
-
+                
             self.logger.info("\n Training reward model")
             self.reward_trainer.train(self.dataset, epoch_multiplier=epoch_multip)
             self.logger.debug("Reward training finished")
@@ -166,7 +167,7 @@ class PreferenceComparisons():
                 num_steps += extra_timesteps
             
             self.logger.info("\n Training agent")
-            self.gym.training(nb_episodes=1000)
+            self.gym.training(nb_episodes=1000, rlhf=self.use_wandb)
             self.logger.debug("Training finished")
     
         # if human feedback, save preferences

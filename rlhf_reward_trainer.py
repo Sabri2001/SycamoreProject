@@ -131,18 +131,19 @@ class LinearRewardTrainer(RewardTrainer):
     def train(self, dataset, epoch_multiplier=1.):
         num_epochs = int(epoch_multiplier * 1000)
 
-        for epoch in range(num_epochs):
-            total_loss = 0.
-            
+        total_loss = 0.
+        counter = 0
+        for epoch in range(num_epochs):    
             for sample in dataset.sample(batch_size=32):
                 trajectory_pair, pref_traj1 = sample
 
                 loss = self.train_step(trajectory_pair, pref_traj1)
                 total_loss += loss
+                counter += 1
 
             # Print the average loss for this epoch
             if epoch % 50 == 0:
-                average_loss = total_loss / len(dataset)
+                average_loss = total_loss / counter
                 self.logger.info(f"Epoch [{epoch + 1}/{num_epochs}] Loss: {average_loss:.4f}")
                 self.logger.info(f"   --->  Reward coeff: {self.preference_model.get_reward_coeff()}")
 
@@ -181,19 +182,20 @@ class LinearRewardEnsembleTrainer(RewardTrainer):
     def train(self, dataset, epoch_multiplier=1.):
         num_epochs = int(epoch_multiplier * 1000)
 
+        total_loss = 0.0
+        counter = 0
         for epoch in range(num_epochs):
-            total_loss = 0.0
-
             for reward_nb in range(len(self.optimizer_list)):
                 for sample in dataset.sample(batch_size=32):
                     trajectory_pair, pref_traj1 = sample
 
                     loss = self.train_step(trajectory_pair, pref_traj1, reward_nb)
                     total_loss += loss
+                    counter += 1
 
             # Print the average loss for this epoch
             if epoch % 50 == 0:
-                average_loss = total_loss / len(dataset) / len(self.optimizer_list)
+                average_loss = total_loss / counter
                 self.logger.info(f"Epoch [{epoch + 1}/{num_epochs}] Loss: {average_loss:.4f}")
                 for i in range(len(self.optimizer_list)):
                     self.logger.info(f"   --->  Reward coeff {i}: {self.preference_model.get_reward_coeff()[i]}")
@@ -228,18 +230,19 @@ class RewardTrainerCNN(RewardTrainer):
     def train(self, dataset, epoch_multiplier=1.):
         num_epochs = int(epoch_multiplier * 1000)
 
+        total_loss = 0.0
+        counter = 0
         for epoch in range(num_epochs):
-            total_loss = 0.0
-
             for sample in dataset.sample(batch_size=32):
                 trajectory_pair, pref_traj1 = sample
 
                 loss = self.train_step(trajectory_pair, pref_traj1)
                 total_loss += loss
+                counter += 1
 
             # Print the average loss for this epoch
             if epoch % 50 == 0:
-                average_loss = total_loss / len(dataset)
+                average_loss = total_loss / counter
                 self.logger.info(f"Epoch [{epoch + 1}/{num_epochs}] Loss: {average_loss:.4f}")
 
 

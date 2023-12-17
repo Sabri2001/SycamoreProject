@@ -131,13 +131,17 @@ class ReplayDiscreteGymSupervisor():
         self.use_gabriel = use_gabriel
         self.use_linear = use_linear
 
+        # init gab reward (for plotting)
+        if config['reward']=='punitive':
+            self.reward_gab = punitive_reward
+        elif config['reward']=='generous':
+            self.reward_gab = generous_reward
+        elif config['reward']=='modular':
+            self.reward_gab = modular_reward
+
+        # init used reward
         if reward_fun is None:
-            if config['reward']=='punitive':
-                self.rewardf = punitive_reward
-            elif config['reward']=='generous':
-                self.rewardf = generous_reward
-            elif config['reward']=='modular':
-                self.rewardf = modular_reward
+            self.rewardf = self.reward_gab
         else:
             self.rewardf = reward_fun
 
@@ -167,6 +171,7 @@ class ReplayDiscreteGymSupervisor():
         success = False
         failure = False
         rewards_ar = np.zeros((self.n_robots,max_steps))
+        rewards_gab_ar = np.zeros((self.n_robots,max_steps))
         self.sim =copy.deepcopy(self.setup)
         gap=None
 
@@ -292,7 +297,9 @@ class ReplayDiscreteGymSupervisor():
                 if self.use_gabriel:
                     reward = self.rewardf(action, valid, closer, success, failure, n_sides=n_sides, config=self.config)
                 else:
-                    if self.use_linear:
+                    reward_gab = self.reward_gab(action, valid, closer, success, failure, n_sides=n_sides, config=self.config)
+                    rewards_gab_ar[idr,step]=reward_gab
+                    if self.use_linear:# leave this one, useful later
                         reward = self.rewardf(reward_features).detach().cpu().numpy() # linear reward
                     else:
                         reward = self.rewardf(self.sim.grid).detach().cpu().numpy() # cnn reward
@@ -334,8 +341,8 @@ class ReplayDiscreteGymSupervisor():
                 break
         
         if draw:
-            anim = self.sim.animate() # needed for wandb
-            # anim = self.sim.frames, self.sim.fig, self.sim.ax -> TODO: check whether needed for human fb
+            # anim = self.sim.animate() # needed for wandb
+            anim = self.sim.frames, self.sim.fig, self.sim.ax #-> TODO: check whether needed for human fb
         else:
             anim = None
 
@@ -347,7 +354,7 @@ class ReplayDiscreteGymSupervisor():
 
         # Return depends on mode (training/trajectory generation)
         if train:
-            return rewards_ar,step,anim,transition_buffer,transition_buffer_count,success,gap,average_loss
+            return rewards_ar,step,anim,transition_buffer,transition_buffer_count,success,gap,average_loss, rewards_gab_ar
         else:
             trajectory.set_animation(anim)
             trajectory_buffer[trajectory_buffer_count] = trajectory
@@ -355,14 +362,16 @@ class ReplayDiscreteGymSupervisor():
             return rewards_ar,step,anim,trajectory_buffer,trajectory_buffer_count,success,gap
     
     def training(self,
-                pfreq = 10,
-                draw_freq=100, # leave this one, useful later
+                pfreq = 100,
+                draw_freq=100,
                 max_steps=100,
                 success_rate_decay = 0.01,
                 nb_episodes = 100,
                 use_wandb = False,
                 log_dir=None,
-                nb_traj=10
+                nb_traj=30,
+                reward_rate_decay = 0.2,
+                rlhf = False
                 ):
         """
         Initialises buffer, and repeatedly (train_n_episodes times) 
@@ -376,6 +385,11 @@ class ReplayDiscreteGymSupervisor():
             res_dict={}
         else:
             success_rate = 0 # fixed size => only need one
+
+        # init reward for each gap
+        reward_rate = np.zeros(self.gap_range[1])
+        reward_rate[0]=1
+        reward_dict = {}
 
         # for wandb logging
         if log_dir is None:
@@ -392,12 +406,17 @@ class ReplayDiscreteGymSupervisor():
         # start training
         print("Training started")
 
+        # reward_counter
+        total_loss = 0
+        counter = 0
+
         # run over several episodes
         for episode in range(nb_episodes):
             # run an episode
-            (rewards_ep, _,
+            (_, _,
              anim, transition_buffer, 
-             buffer_count, success, gap, loss) = self.episode_restart(max_steps,
+             buffer_count, success, gap, 
+             loss, reward_gab) = self.episode_restart(max_steps,
                                                               draw = episode % draw_freq == 0, #draw_freq-1,
                                                               transition_buffer=transition_buffer,
                                                               transition_buffer_count=buffer_count,
@@ -415,21 +434,37 @@ class ReplayDiscreteGymSupervisor():
                 else:
                     success_rate = (1-success_rate_decay)*success_rate
             
+            # update reward_rate
+            reward_rate[gap] = (1-reward_rate_decay)*reward_rate[gap] + reward_rate_decay*np.sum(reward_gab)
+
             # log
             if not self.use_gabriel and episode % pfreq==0:
-                self.logger.info(f'episode {episode}/{nb_episodes} rewards: {np.sum(rewards_ep,axis=1)}')
-                # self.logger.info(f"Success rate (gap 2): {success_rate[2]}")
-                _, suc_rate = self.generate_trajectories(nb_traj)
-                self.logger.info(f'Success rate: {suc_rate} - Loss: {loss}')
+                if loss != None:
+                    total_loss += loss
+                    counter += 1  
+                self.logger.info(f'episode {episode}/{nb_episodes} rewards: {reward_rate[1:]}')
+                # _, suc_rate = self.generate_trajectories(nb_traj)
+                if counter != 0:
+                    self.logger.info(f'Success rate: {success_rate} - Loss: {total_loss/counter}')
+                total_loss = 0
+                counter = 0
 
             # wandb
-            if use_wandb and episode % self.log_freq == 0:
-                if self.random_targets == 'random_gap' or self.random_targets == 'random_gap_center':
-                    for i in np.arange(self.gap_range[0],self.gap_range[1]):
-                        res_dict[f'success_rate_gap{i}']=success_rate[i]
-                    wandb.log(res_dict)
-                else:
-                    wandb.log({'succes_rate':success_rate})
+            if episode % self.log_freq == 0:
+                if rlhf:
+                    # reward gab
+                    for i in np.arange(self.gap_range[0], self.gap_range[1]):
+                        reward_dict[f'reward_gap{i}']=reward_rate[i]
+                    wandb.log(reward_dict)
+
+                elif use_wandb:
+                    # success_rate
+                    if self.random_targets == 'random_gap' or self.random_targets == 'random_gap_center':
+                        for i in np.arange(self.gap_range[0],self.gap_range[1]):
+                            res_dict[f'success_rate_gap{i}']=success_rate[i]
+                        wandb.log(res_dict)
+                    else:
+                        wandb.log({'succes_rate':success_rate})
 
             # save anim
             if anim is not None:
@@ -482,7 +517,7 @@ class ReplayDiscreteGymSupervisor():
             else:
                 success_rate = success_rate*episode/(episode+1) + success/(episode+1)
             
-        return trajectory_buffer, success_rate[2:]
+        return trajectory_buffer, success_rate[1:]
 
     def evaluate_agent(self,
                 nb_trials = 100,
