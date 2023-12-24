@@ -221,6 +221,10 @@ TARGET ENTROPY NOW 0.5
 	agent: 24_12_trained_agent_learned_reward_learning_remote_2.pt (20k epi)
 	wandb: 24_12_synthetic_feedback_remote_2
 	
-	
-	
+- RLHF synthetic fb, 400 comparisons, pref dataset max size 100, batch32, 20 rounds, 5000 iter, CNN
+	PURPOSE: same test as 11/12, but wanna have plot for evolution of gab's reward
+	log: 24_12_synth_fb_remote_3
+	agent: 24_12_trained_agent_learned_reward_learning_remote_3.pt (20k epi)
+	wandb: 24_12_synthetic_feedback_remote_3
+
 

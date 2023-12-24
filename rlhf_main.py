@@ -22,13 +22,14 @@ from rlhf_preference_comparisons import PreferenceComparisons
 USE_WANDB = False
 HUMAN_FEEDBACK = False
 LOGGING = False 
-REMOTE = True
+REMOTE = False
 SAVE_AGENT = True
+SAVE_REWARD = True
 LOGGING_LVL = "info"
 DISAGREEMENT = False
 SAVE_PREFERENCES = False
 LINEAR = False # linear or cnn reward
-NB_EPISODES = 200 # for regular agent training at the end # TODO: put back 20k
+NB_EPISODES = 20000 # for regular agent training at the end
 
 if USE_WANDB:
     LOGGING = True
@@ -92,6 +93,15 @@ if SAVE_AGENT:
     while os.path.exists(f"{base_filename}_{index}.pt"):
         index += 1
     TRAINED_AGENT = f"{base_filename}_{index}.pt"
+
+if SAVE_REWARD:
+    today_str = datetime.datetime.now().strftime("%d_%m")
+    location_str = "remote" if REMOTE else "local"
+    base_filename = f"{today_str}_learned_reward_{location_str}"
+    index = 1
+    while os.path.exists(f"{base_filename}_{index}.pt"):
+        index += 1
+    TRAINED_REWARD = f"{base_filename}_{index}.pt"
 
 if SAVE_PREFERENCES:
     today_str = datetime.datetime.now().strftime("%d_%m")
@@ -248,7 +258,7 @@ else:
 pref_comparisons = PreferenceComparisons(
     gym,
     reward_model,
-    num_iterations=2,  # I put 20, set to 60 for better performance # TODO: put back
+    num_iterations=20,  # I put 20, set to 60 for better performance
     pair_generator=pair_generator,
     preference_gatherer=gatherer,
     reward_trainer=reward_trainer,
@@ -270,9 +280,11 @@ logger.info("REWARD TRAINING STARTED")
 logger.info("####################### \n")
 pref_comparisons.train(
     total_timesteps=5000, # 5000
-    total_comparisons=40, # 200 (I put 400) # TODO: put back
+    total_comparisons=400, # 200 (I put 400)
 )
 logger.debug("REWARD TRAINING ENDED \n \n")
+if SAVE_REWARD:
+    th.save(reward_model, TRAINED_REWARD, pickle_module=pickle)
 
 # TRAIN AGENT ON LEARNED REWARD
 logger.info("\n \n ########################################")

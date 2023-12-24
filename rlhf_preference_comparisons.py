@@ -163,7 +163,7 @@ class PreferenceComparisons():
                 num_steps += extra_timesteps
             
             self.logger.info("\n Training agent")
-            self.gym.training(nb_episodes=100, rlhf=self.use_wandb) # TODO: put back 1000
+            self.gym.training(nb_episodes=1000, rlhf=self.use_wandb)
             self.logger.debug("Training finished")
     
         # if human feedback, save preferences
