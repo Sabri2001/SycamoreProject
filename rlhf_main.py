@@ -19,16 +19,16 @@ from rlhf_preference_comparisons import PreferenceComparisons
 
 
 # CONSTANTS
-USE_WANDB = True
+USE_WANDB = False
 HUMAN_FEEDBACK = False
-LOGGING = True
+LOGGING = False 
 REMOTE = True
 SAVE_AGENT = True
 LOGGING_LVL = "info"
 DISAGREEMENT = False
-SAVE_PREFERENCES = True
-LINEAR = True # linear or cnn reward
-NB_EPISODES = 20000
+SAVE_PREFERENCES = False
+LINEAR = False # linear or cnn reward
+NB_EPISODES = 200 # for regular agent training at the end # TODO: put back 20k
 
 if USE_WANDB:
     LOGGING = True
@@ -110,7 +110,7 @@ else:
     over_sampling = 1
 
 # blocks
-hexagon = Block([[1,0,0],[1,1,1],[1,1,0],[0,2,1],[0,1,0],[0,1,1]],muc=0.7)
+hexagon = Block([[1,0,0],[1,1,1],[1,1,0],[0,2,1],[0,1,0],[0,1,1]], muc=0.7)
 target = Block([[0,0,1]])
 
 # config
@@ -248,7 +248,7 @@ else:
 pref_comparisons = PreferenceComparisons(
     gym,
     reward_model,
-    num_iterations=20,  # Set to 60 for better performance
+    num_iterations=2,  # I put 20, set to 60 for better performance # TODO: put back
     pair_generator=pair_generator,
     preference_gatherer=gatherer,
     reward_trainer=reward_trainer,
@@ -270,7 +270,7 @@ logger.info("REWARD TRAINING STARTED")
 logger.info("####################### \n")
 pref_comparisons.train(
     total_timesteps=5000, # 5000
-    total_comparisons=400, # 200 (I put 400) # TODO: put back
+    total_comparisons=40, # 200 (I put 400) # TODO: put back
 )
 logger.debug("REWARD TRAINING ENDED \n \n")
 
@@ -280,7 +280,6 @@ logger.info("AGENT TRAINING ON LEARNED REWARD STARTED")
 logger.info("######################################## \n")
 if USE_WANDB:
     pref_comparisons.gym.use_wandb = USE_WANDB
-    # pref_comparisons.gym.run = run
 pref_comparisons.gym.training(nb_episodes=NB_EPISODES, use_wandb = USE_WANDB)
 logger.debug("AGENT TRAINING ON LEARNED REWARD ENDED \n \n")
 if SAVE_AGENT:

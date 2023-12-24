@@ -162,7 +162,7 @@ TARGET ENTROPY NOW 0.5
 - Regular agent training a few episodes: simple test -> successful
 
 
-11/12
+11/12 - MAIN SUCCESS
 - Regular agent training with Gabriel's reward (gap1-7) -> remote (20k epi)
 	agent: 11_12_trained_agent_gabriel_reward_remote.pt
 	wandb: 11_12_trained_agent_gabriel_reward_remote
@@ -201,4 +201,26 @@ TARGET ENTROPY NOW 0.5
 	wandb: 17_12_synthetic_feedback_remote_2
 
 
+18/12 -> lr = 3e-5 and fixed peaks in gab reward plots
+- RLHF synthetic fb, 400 comparisons, pref dataset max size 100, batch32, 20 rounds, 5000 iter, LINEAR
+	log: 18_12_synth_fb_remote_1
+	agent: 18_12_trained_agent_learned_reward_learning_remote_1.pt (20k epi)
+	wandb: 18_12_synthetic_feedback_remote_1
 	
+	
+24/12
+- RLHF synthetic fb, 400 comparisons, pref dataset max size 100, batch32, 20 rounds, 5000 iter, LINEAR
+	PURPOSE: same test as 11/12, but wanna have plot for evolution of gab's reward
+	log: 24_12_synth_fb_remote_1
+	agent: 24_12_trained_agent_learned_reward_learning_remote_1.pt (20k epi)
+	wandb: 24_12_synthetic_feedback_remote_1
+	
+- RLHF synthetic fb, 400 comparisons, pref dataset max size 100, batch32, 20 rounds, 5000 iter, LINEAR + DISAGREEMENT
+	PURPOSE: same test as 11/12, but wanna have plot for evolution of gab's reward
+	log: 24_12_synth_fb_remote_2
+	agent: 24_12_trained_agent_learned_reward_learning_remote_2.pt (20k epi)
+	wandb: 24_12_synthetic_feedback_remote_2
+	
+	
+	
+

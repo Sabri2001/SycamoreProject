@@ -117,13 +117,9 @@ class PreferenceComparisons():
             # Generate trajectories
             nb_traj = self.transition_oversampling * 2 * num_pairs
             self.logger.info(f"Collecting {nb_traj} trajectories")
-            trajectories, success_rate = self.gym.generate_trajectories(nb_traj, draw_freq=self.draw_freq)
+            trajectories, success_rate, _ = self.gym.generate_trajectories(nb_traj)
             self.logger.debug(f"Nb of trajectories generated: {len(trajectories)}")
             self.logger.info(f"Success rate: {success_rate}")
-
-            if self.use_wandb:
-                print("test")
-                wandb.log({"test": 2})
 
             # Create pairs of trajectories (to be compared)
             self.logger.info("Creating trajectory pairs")
@@ -167,7 +163,7 @@ class PreferenceComparisons():
                 num_steps += extra_timesteps
             
             self.logger.info("\n Training agent")
-            self.gym.training(nb_episodes=1000, rlhf=self.use_wandb)
+            self.gym.training(nb_episodes=100, rlhf=self.use_wandb) # TODO: put back 1000
             self.logger.debug("Training finished")
     
         # if human feedback, save preferences

@@ -107,15 +107,10 @@ class RewardLinear(nn.Module):
         return np.array(th.Tensor.cpu(self.coeff.data))
 
     def normalize_reward(self):
-        if self.device == 'cuda':
-            norm_factor = th.linalg.norm(self.coeff.data)
-            if norm_factor > 5.40: # same l2-norm as Gab's modular reward
-                self.coeff.data /= norm_factor * 5.40
-
-        elif self.device == 'cpu':
-            norm_factor = np.linalg.norm(self.coeff.data)
-            if norm_factor > 5.40: # same l2-norm as Gab's modular reward
-                self.coeff.data /= norm_factor * 5.40
+        self.coeff.data -= th.mean(self.coeff.data)
+        norm_factor = th.linalg.norm(self.coeff.data)
+        if norm_factor > 5.40: # same l2-norm as Gab's modular reward
+            self.coeff.data /= norm_factor * 5.40
 
 
 class RewardLinearEnsemble(nn.Module):
