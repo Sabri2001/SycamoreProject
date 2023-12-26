@@ -208,7 +208,7 @@ TARGET ENTROPY NOW 0.5
 	wandb: 18_12_synthetic_feedback_remote_1
 	
 	
-24/12
+24/12 -> now demean reward for linear (bad idea!!!)
 - RLHF synthetic fb, 400 comparisons, pref dataset max size 100, batch32, 20 rounds, 5000 iter, LINEAR
 	PURPOSE: same test as 11/12, but wanna have plot for evolution of gab's reward
 	log: 24_12_synth_fb_remote_1
@@ -225,6 +225,13 @@ TARGET ENTROPY NOW 0.5
 	PURPOSE: same test as 11/12, but wanna have plot for evolution of gab's reward
 	log: 24_12_synth_fb_remote_3
 	agent: 24_12_trained_agent_learned_reward_learning_remote_3.pt (20k epi)
-	wandb: 24_12_synthetic_feedback_remote_3
+	
+	
+26/12 -> don't demean anymore!
+- RLHF synthetic fb, 400 comparisons, pref dataset max size 100, batch32, 20 rounds, 5000 iter, LINEAR
+	PURPOSE: same test as 11/12, but wanna have plot for evolution of gab's reward
+	log: 26_12_synth_fb_remote_1
+	agent: 26_12_trained_agent_learned_reward_learning_remote_1.pt (20k epi)
+	wandb: 26_12_synthetic_feedback_remote_1
 
 
