@@ -116,7 +116,7 @@ class RewardLinear(nn.Module):
 class RewardLinearEnsemble(nn.Module):
     def __init__(self, gamma, nb_rewards, logger, device):
         self.nb_rewards = nb_rewards
-        self.reward_list = [RewardLinear(gamma, logger, device) for _ in range(nb_rewards)]
+        self.reward_list = [RewardLinear(gamma, logger, device, seed=30+i) for i in range(nb_rewards)]
         self.device = device
         self.logger = logger
         self.gamma = gamma

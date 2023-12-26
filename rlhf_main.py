@@ -20,7 +20,7 @@ from rlhf_preference_comparisons import PreferenceComparisons
 
 # CONSTANTS
 USE_WANDB = False
-HUMAN_FEEDBACK = False
+HUMAN_FEEDBACK = True
 LOGGING = False 
 REMOTE = False
 SAVE_AGENT = True
@@ -181,7 +181,7 @@ if DISAGREEMENT:
         reward_model = RewardCNNEnsemble(gamma, nb_rewards, logger, device, [15,15], 2, 2, config)
 else:
     if LINEAR:
-        reward_model = RewardLinear(gamma, logger, device)
+        reward_model = RewardLinear(gamma, logger, device, seed=42)
     else:
         reward_model = RewardCNN(gamma, logger, device, [15,15], 2, 2, config)
 
@@ -217,7 +217,7 @@ else:
 
 # Create Preference Gatherer (human/synthetic)
 if HUMAN_FEEDBACK:
-    gatherer = HumanPreferenceGatherer()
+    gatherer = HumanPreferenceGatherer(device)
 else:
     coeff = th.tensor([
                 config['reward_action']['Ph'],
@@ -271,7 +271,8 @@ pref_comparisons = PreferenceComparisons(
     logger = logger,
     comparison_queue_size=100,
     dataset_path=PREF_DATASET_PATH,
-    device = device
+    device = device,
+    human_fb = HUMAN_FEEDBACK
 )
 
 # TRAIN REWARD

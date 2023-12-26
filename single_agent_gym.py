@@ -342,9 +342,10 @@ class ReplayDiscreteGymSupervisor():
         
         if draw:
             anim = self.sim.animate() # needed for wandb
-            # anim = self.sim.frames, self.sim.fig, self.sim.ax # for human fb
+            anim_frames = self.sim.frames, self.sim.fig, self.sim.ax # for human fb
         else:
             anim = None
+            anim_frames = None
 
         if train:
             if loss_nb == 0:
@@ -356,7 +357,7 @@ class ReplayDiscreteGymSupervisor():
         if train:
             return rewards_ar,step,anim,transition_buffer,transition_buffer_count,success,gap,average_loss
         else:
-            trajectory.set_animation(anim)
+            trajectory.set_animation(anim_frames)
             trajectory_buffer[trajectory_buffer_count] = trajectory
             trajectory_buffer_count += 1
             return rewards_ar,step,anim,trajectory_buffer,trajectory_buffer_count,success,gap,rewards_gab_ar
@@ -471,7 +472,9 @@ class ReplayDiscreteGymSupervisor():
     
     def generate_trajectories(self,
                 nb_traj = 100,
-                max_steps=100):
+                max_steps=100,
+                draw=False
+                ):
         """
         Initialises trajectory buffer, and repeatedly (n_episodes) 
         calls episode_restart(train=False) to fill buffer.
@@ -499,7 +502,7 @@ class ReplayDiscreteGymSupervisor():
              _, trajectory_buffer, 
              buffer_count, success, 
              gap, reward_gab) = self.episode_restart(max_steps,
-                                                              draw = False,
+                                                              draw = draw,
                                                               trajectory_buffer=trajectory_buffer,
                                                               trajectory_buffer_count=buffer_count,
                                                               auto_leave=True,

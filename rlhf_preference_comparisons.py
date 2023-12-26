@@ -42,7 +42,8 @@ class PreferenceComparisons():
         use_wandb = False,
         logger = None,
         dataset_path = None,
-        device = None
+        device = None,
+        human_fb = False
     ):
         
         # Init all attributes
@@ -54,9 +55,10 @@ class PreferenceComparisons():
         self.initial_epoch_multiplier = initial_epoch_multiplier
         self.num_iterations = num_iterations
         self.transition_oversampling = transition_oversampling
-        self.draw_freq = draw_freq # draw_freq = 1 when asking for human feedback if use_wandb and episode % self.log_freq == 0:
+        # self.draw_freq = draw_freq # draw_freq = 1 when asking for human feedback
         self.use_wandb = use_wandb
         self.logger = logger
+        self.human_fb = human_fb
         
         # Init schedule
         if callable(query_schedule):
@@ -117,7 +119,7 @@ class PreferenceComparisons():
             # Generate trajectories
             nb_traj = self.transition_oversampling * 2 * num_pairs
             self.logger.info(f"Collecting {nb_traj} trajectories")
-            trajectories, success_rate, _ = self.gym.generate_trajectories(nb_traj)
+            trajectories, success_rate, _ = self.gym.generate_trajectories(nb_traj, draw=self.human_fb)
             self.logger.debug(f"Nb of trajectories generated: {len(trajectories)}")
             self.logger.info(f"Success rate: {success_rate}")
 

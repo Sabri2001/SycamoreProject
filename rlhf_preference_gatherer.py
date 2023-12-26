@@ -1,7 +1,7 @@
 import abc
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib import animation
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import torch as th
 import tkinter as tk
 
@@ -90,8 +90,10 @@ class SyntheticPreferenceGatherer(PreferenceGatherer):
     
 
 class HumanPreferenceGatherer(PreferenceGatherer):
-    def __init__(self):
+    def __init__(self, device):
         "Initialises Preference Gatherer"
+        self.preference = None
+        self.device = device
 
     def __call__(self, trajectory_pairs):
         """
@@ -111,49 +113,60 @@ class HumanPreferenceGatherer(PreferenceGatherer):
         """
         preferences = th.tensor([])
 
+        def on_button_press(fig1, fig2, window, ani1, ani2, preference_value):
+            # Store the preference value
+            self.preference = preference_value
+
+            # Close figures
+            plt.close(fig1)
+            plt.close(fig2)
+            
+            # Close the Tkinter window
+            window.destroy()
+            window.quit()
+            
+
         for trajectory_pair in trajectory_pairs:
+            # Print the list of figure numbers
+            # open_figures = plt.get_fignums()
+            # print("Open Figures:", open_figures)
+
             # Retrieve animations
             anim1, fig1, ax1 = trajectory_pair[0].get_animation()
-            # print(f"Number {fig1.number}")
             ani1 = gr.animate(fig1, anim1)
-            fig1.show()
-
-            # plt.show()
 
             anim2, fig2, ax2 = trajectory_pair[1].get_animation()
-            print(f"Number {fig2.number}")
-            print(f"Number {fig1.number}")
             ani2 = gr.animate(fig2, anim2)
-            print(f"ANI1: {ani1}")
-            print(f"ANI2: {ani2}")
 
-            fig2.show()
-
+            # Create the Tkinter window
             window = tk.Tk()
-            greeting = tk.Label(text='hello')
-            greeting.pack()
+            window.title("Matplotlib Animation Window")
+
+            window.geometry("1200x1000")  # Set your desired width and height
+
+            # Create the buttons
+            left_button = tk.Button(window, text="TOP", command=lambda: on_button_press(fig1, fig2, window, ani1, ani2, 1))
+            left_button.pack(side=tk.LEFT, padx=10)
+
+            same_button = tk.Button(window, text="SAME", command=lambda: on_button_press(fig1, fig2, window, ani1, ani2, 0.5))
+            same_button.pack(side=tk.LEFT, padx=10)
+
+            right_button = tk.Button(window, text="BOTTOM", command=lambda: on_button_press(fig1, fig2, window, ani1, ani2, 0))
+            right_button.pack(side=tk.LEFT, padx=10)
+
+            # Embed Matplotlib figures in Tkinter window
+            canvas1 = FigureCanvasTkAgg(fig1, master=window)
+            canvas1.draw()
+            canvas1.get_tk_widget().pack(side=tk.TOP, fill=tk.Y, expand=1)
+
+            canvas2 = FigureCanvasTkAgg(fig2, master=window)
+            canvas2.draw()
+            canvas2.get_tk_widget().pack(side=tk.BOTTOM, fill=tk.Y, expand=1)
+
             window.mainloop()
 
-            # [ax1.add_artist(artist) for artist in anim1[-1]]
-
-            # print(f"FIG: {fig1}")
-            # print(f"FIG: {fig2}")
-            # print(f"FIG: {fig1==fig2}")
-
-            # anim1 = trajectory_pair[0].get_animation()
-            # interactive(True)
-            # plt.show()
-            # print(f"PLT: {plt.get_fignums()}")
-            # fig, ax = plt.subplots(1,1)
-
-            # anim2 = trajectory_pair[0].get_animation()
-
-            print(f"PLT: {plt.get_fignums()}")
-
-            #plt.show()
-
-            break 
+            preferences = th.cat([preferences, th.tensor([self.preference], device=self.device, dtype=th.float32)])
+            print(f"pref: {preferences}")
 
         plt.close('all')
-        return np.array(preferences)
-    
+        return preferences
