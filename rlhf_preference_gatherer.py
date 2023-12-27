@@ -113,7 +113,7 @@ class HumanPreferenceGatherer(PreferenceGatherer):
         """
         preferences = th.tensor([])
 
-        def on_button_press(fig1, fig2, window, ani1, ani2, preference_value):
+        def on_button_press(fig1, fig2, window, preference_value):
             # Store the preference value
             self.preference = preference_value
 
@@ -124,7 +124,8 @@ class HumanPreferenceGatherer(PreferenceGatherer):
             # Close the Tkinter window
             window.destroy()
             window.quit()
-            
+
+        valid_trajectory_pairs = []
 
         for trajectory_pair in trajectory_pairs:
             # Print the list of figure numbers
@@ -142,17 +143,20 @@ class HumanPreferenceGatherer(PreferenceGatherer):
             window = tk.Tk()
             window.title("Matplotlib Animation Window")
 
-            window.geometry("1200x1000")  # Set your desired width and height
+            window.geometry("1500x1200")  # Set your desired width and height
 
             # Create the buttons
-            left_button = tk.Button(window, text="TOP", command=lambda: on_button_press(fig1, fig2, window, ani1, ani2, 1))
+            left_button = tk.Button(window, text="TOP", command=lambda: on_button_press(fig1, fig2, window, 1))
             left_button.pack(side=tk.LEFT, padx=10)
 
-            same_button = tk.Button(window, text="SAME", command=lambda: on_button_press(fig1, fig2, window, ani1, ani2, 0.5))
+            same_button = tk.Button(window, text="SAME", command=lambda: on_button_press(fig1, fig2, window, 0.5))
             same_button.pack(side=tk.LEFT, padx=10)
 
-            right_button = tk.Button(window, text="BOTTOM", command=lambda: on_button_press(fig1, fig2, window, ani1, ani2, 0))
+            right_button = tk.Button(window, text="BOTTOM", command=lambda: on_button_press(fig1, fig2, window, 0))
             right_button.pack(side=tk.LEFT, padx=10)
+
+            not_sure_button = tk.Button(window, text="NOT SURE", command=lambda: on_button_press(fig1, fig2, window, -2))
+            not_sure_button.pack(side=tk.LEFT, padx=10)
 
             # Embed Matplotlib figures in Tkinter window
             canvas1 = FigureCanvasTkAgg(fig1, master=window)
@@ -164,9 +168,11 @@ class HumanPreferenceGatherer(PreferenceGatherer):
             canvas2.get_tk_widget().pack(side=tk.BOTTOM, fill=tk.Y, expand=1)
 
             window.mainloop()
-
-            preferences = th.cat([preferences, th.tensor([self.preference], device=self.device, dtype=th.float32)])
-            print(f"pref: {preferences}")
+            
+            print(f"Pref: {self.preference}")
+            if self.preference != -2:  # when not sure (e.g. because display bug)
+                preferences = th.cat([preferences, th.tensor([self.preference], device=self.device, dtype=th.float32)])
+                valid_trajectory_pairs.append(trajectory_pair)
 
         plt.close('all')
-        return preferences
+        return valid_trajectory_pairs, preferences

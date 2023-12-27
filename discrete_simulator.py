@@ -110,7 +110,7 @@ class DiscreteSimulator():
     def setup_anim(self,h=6):
         # plt.close('all')
         self.frames = []
-        h = 5 # test
+        h = 6 # test
         self.fig, self.ax = gr.draw_grid([20,8],color='none',h=h) # [30, 12]
     
     def add_ground(self,block,pos,ground_type=0):

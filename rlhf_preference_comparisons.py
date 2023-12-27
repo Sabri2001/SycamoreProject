@@ -133,7 +133,9 @@ class PreferenceComparisons():
             ##########################    
             # Gather synthetic or human preferences
             self.logger.info("Gathering preferences")
-            preferences = self.preference_gatherer(pairs)
+            pairs, preferences = self.preference_gatherer(pairs)
+            print(f"Pairs: {len(pairs)}")
+            print(f"Preferences: {preferences}")
             self.logger.debug("Gathering over")
             self.logger.debug(f"Preferences gathered: {preferences}")
 

@@ -233,5 +233,9 @@ TARGET ENTROPY NOW 0.5
 	log: 26_12_synth_fb_remote_1
 	agent: 26_12_trained_agent_learned_reward_learning_remote_1.pt (20k epi)
 	wandb: 26_12_synthetic_feedback_remote_1
+	
+
+
+
 
 
