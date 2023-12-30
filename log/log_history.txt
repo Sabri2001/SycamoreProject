@@ -235,7 +235,39 @@ TARGET ENTROPY NOW 0.5
 	wandb: 26_12_synthetic_feedback_remote_1
 	
 
+27/12 -> test human fb
+- RLHF HUMAN fb, 400 comparisons, pref dataset max size 100, batch32, 20 rounds, 5000 iter, LINEAR
+	log: 27_12_synth_fb_local_1
+	agent: 27_12_trained_agent_learned_reward_learning_local_1.pt (20k epi)
+	wandb: 27_12_synthetic_feedback_local_1
+	
 
+28/12 -> correct projection
+- RLHF synthetic fb, 400 comparisons, pref dataset max size 100, batch32, 20 rounds, 5000 iter, LINEAR
+	log: 28_12_synth_fb_remote_1
+	agent: 28_12_trained_agent_learned_reward_learning_remote_1.pt (20k epi)
+	wandb: 28_12_synthetic_feedback_remote_1	
+	
+- RLHF HUMAN fb, 400 comparisons, pref dataset max size 100, batch32, 20 rounds, 5000 iter, LINEAR
+	log: 28_12_synth_fb_local_1
+	agent: 28_12_trained_agent_learned_reward_learning_local_1.pt (20k epi)
+	wandb: 28_12_synthetic_feedback_local_1
+	
+	
+30/12
+- Regular agent training with 28/12 synth fb
+	agent: 30_12_trained_agent_gabriel_reward_remote_1.pt (20k epi) -> STOPPED, USELESS
 
+- Reward comparison -> 30_12_reward_comparisons
+
+- RLHF synthetic fb, 400 comparisons, pref dataset max size 100, batch32, 20 rounds, 5000 iter, LINEAR -> USE MODULAR REWARD IN RLHF
+	log: 30_12_synth_fb_remote_1
+	agent: 30_12_trained_agent_learned_reward_learning_local_1.pt (20k epi)
+	wandb: 30_12_synthetic_feedback_remote_1 -> STOPPED: NONSENSE, HUGE RETURNS
+
+- RLHF synthetic fb, 400 comparisons, pref dataset max size 100, batch32, 20 rounds, 5000 iter, LINEAR -> USE MODULAR REWARD IN RLHF
+	log: 30_12_synth_fb_remote_2
+	agent: 30_12_trained_agent_learned_reward_learning_local_2.pt (20k epi)
+	wandb: 30_12_synthetic_feedback_remote_2 
 
 

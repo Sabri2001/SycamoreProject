@@ -76,7 +76,7 @@ class SyntheticPreferenceGatherer(PreferenceGatherer):
             else:
                 preferences = th.cat([preferences, th.tensor([0.5], device=self.device, dtype=th.float32)])
 
-        return preferences
+        return trajectory_pairs, preferences
 
     def reward_trajectory(self, trajectory):
         """Compute reward for a trajectory."""

@@ -110,7 +110,8 @@ class RewardLinear(nn.Module):
         # self.coeff.data -= th.mean(self.coeff.data)
         norm_factor = th.linalg.norm(self.coeff.data)
         if norm_factor > 5.40: # same l2-norm as Gab's modular reward
-            self.coeff.data /= norm_factor * 5.40
+            self.coeff.data /= norm_factor
+            self.coeff.data *= 5.40
 
 
 class RewardLinearEnsemble(nn.Module):

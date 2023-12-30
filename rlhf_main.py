@@ -19,9 +19,9 @@ from rlhf_preference_comparisons import PreferenceComparisons
 
 
 # CONSTANTS
-USE_WANDB = False
+USE_WANDB = True
 HUMAN_FEEDBACK = True
-LOGGING = False 
+LOGGING = True
 REMOTE = False
 SAVE_AGENT = True
 SAVE_REWARD = True
@@ -29,7 +29,7 @@ LOGGING_LVL = "info"
 DISAGREEMENT = False
 SAVE_PREFERENCES = True
 LINEAR = True # linear or cnn reward
-NB_EPISODES = 200 # for regular agent training at the end # TODO: put back
+NB_EPISODES = 20000 # for regular agent training at the end
 
 if USE_WANDB:
     LOGGING = True
@@ -258,7 +258,7 @@ else:
 pref_comparisons = PreferenceComparisons(
     gym,
     reward_model,
-    num_iterations=4,  # I put 20, set to 60 for better performance TODO: put back
+    num_iterations=20,  # I put 20, set to 60 for better performance
     pair_generator=pair_generator,
     preference_gatherer=gatherer,
     reward_trainer=reward_trainer,
@@ -280,8 +280,8 @@ logger.info("#######################")
 logger.info("REWARD TRAINING STARTED")
 logger.info("####################### \n")
 pref_comparisons.train(
-    total_timesteps=500, # 5000 TODO: put back
-    total_comparisons=40, # 200 (I put 400) TODO: put back
+    total_timesteps=5000, # 5000
+    total_comparisons=400, # 200 (I put 400)
 )
 logger.debug("REWARD TRAINING ENDED \n \n")
 if SAVE_REWARD:
