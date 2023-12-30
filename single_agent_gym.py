@@ -459,14 +459,14 @@ class ReplayDiscreteGymSupervisor():
                     else:
                         wandb.log({'animation':wandb.Html(anim.to_jshtml())})
 
-        if rlhf: # if an agent training during rlhf rounds
-            _, _, gab_reward = self.generate_trajectories(nb_traj=200)
-            # log
-            self.logger.info(f'\n --> Average gabriel reward: {gab_reward}')
-            reward_dict[f'reward_gabriel_overall']=gab_reward[0]
-            for i in np.arange(self.gap_range[0],self.gap_range[1]):
-                reward_dict[f'reward_gabriel_gap{i}']=gab_reward[i]
-            wandb.log(reward_dict)
+        # if rlhf: # if an agent training during rlhf rounds
+        #     _, _, gab_reward = self.generate_trajectories(nb_traj=200)
+        #     # log
+        #     self.logger.info(f'\n --> Average gabriel reward: {gab_reward}')
+        #     reward_dict[f'reward_gabriel_overall']=gab_reward[0]
+        #     for i in np.arange(self.gap_range[0],self.gap_range[1]):
+        #         reward_dict[f'reward_gabriel_gap{i}']=gab_reward[i]
+        #     wandb.log(reward_dict)
 
         return anim
     

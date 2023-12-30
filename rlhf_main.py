@@ -287,24 +287,24 @@ logger.debug("REWARD TRAINING ENDED \n \n")
 if SAVE_REWARD:
     th.save(reward_model, TRAINED_REWARD, pickle_module=pickle)
 
-# TRAIN AGENT ON LEARNED REWARD
-logger.info("\n \n ########################################")
-logger.info("AGENT TRAINING ON LEARNED REWARD STARTED")
-logger.info("######################################## \n")
-if USE_WANDB:
-    pref_comparisons.gym.use_wandb = USE_WANDB
-pref_comparisons.gym.training(nb_episodes=NB_EPISODES, use_wandb = USE_WANDB)
-logger.debug("AGENT TRAINING ON LEARNED REWARD ENDED \n \n")
-if SAVE_AGENT:
-    th.save(pref_comparisons.gym.agent, TRAINED_AGENT, pickle_module=pickle)
+# # TRAIN AGENT ON LEARNED REWARD
+# logger.info("\n \n ########################################")
+# logger.info("AGENT TRAINING ON LEARNED REWARD STARTED")
+# logger.info("######################################## \n")
+# if USE_WANDB:
+#     pref_comparisons.gym.use_wandb = USE_WANDB
+# pref_comparisons.gym.training(nb_episodes=NB_EPISODES, use_wandb = USE_WANDB)
+# logger.debug("AGENT TRAINING ON LEARNED REWARD ENDED \n \n")
+# if SAVE_AGENT:
+#     th.save(pref_comparisons.gym.agent, TRAINED_AGENT, pickle_module=pickle)
 
-# EVALUATE AGENT
-logger.info("\n \n ########################")
-logger.info("AGENT EVALUATION STARTED")
-logger.info("######################## \n")
-success_rate = pref_comparisons.gym.evaluate_agent(nb_trials=1000)
-logger.info(f"Average success rate: {success_rate} \n \n")
-logger.debug("AGENT EVALUATION ENDED")
+# # EVALUATE AGENT
+# logger.info("\n \n ########################")
+# logger.info("AGENT EVALUATION STARTED")
+# logger.info("######################## \n")
+# success_rate = pref_comparisons.gym.evaluate_agent(nb_trials=1000)
+# logger.info(f"Average success rate: {success_rate} \n \n")
+# logger.debug("AGENT EVALUATION ENDED")
 
 # End wandb
 if USE_WANDB:
