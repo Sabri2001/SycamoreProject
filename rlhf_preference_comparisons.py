@@ -1,3 +1,7 @@
+"""
+@author: elamrani
+"""
+
 from typing import (
     Optional,
     Union,
@@ -6,7 +10,6 @@ from typing import (
 import numpy as np
 from stable_baselines3.common import type_aliases
 from imitation.util import util
-import wandb
 
 from rlhf_reward_model import RewardNet
 from rlhf_preference_dataset import PreferenceDataset, PreferenceDatasetNoDiscard
@@ -105,10 +108,6 @@ class PreferenceComparisons():
             self.num_iterations,
         )
 
-        # Some inits
-        reward_loss = None
-        reward_accuracy = None
-
         # MAIN LOOP
         for i, num_pairs in enumerate(schedule):
             self.logger.info(f"\n \n ROUND {i}")
@@ -174,5 +173,3 @@ class PreferenceComparisons():
         if self.dataset_path:
             self.logger.info("\n Preference dataset saved")
             self.dataset.save(self.dataset_path)
-
-        return {"reward_loss": reward_loss, "reward_accuracy": reward_accuracy}

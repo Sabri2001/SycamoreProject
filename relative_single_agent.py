@@ -2,7 +2,7 @@
 """
 Created on Fri Nov 11 15:48:45 2022
 
-@author: valla, @adapted by: elamrani
+@author: valla
 
 Contains:
 1) Definition of single agents;

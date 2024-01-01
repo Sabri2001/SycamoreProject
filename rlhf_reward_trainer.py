@@ -1,3 +1,7 @@
+"""
+@author: elamrani
+"""
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -292,4 +296,3 @@ class RewardTrainerCNNEnsemble(RewardTrainer):
             if epoch % 50 == 0:
                 average_loss = total_loss / len(dataset) / len(self.optimizer_list)
                 self.logger.info(f"Epoch [{epoch + 1}/{num_epochs}] Loss: {average_loss:.4f}")
-

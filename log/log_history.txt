@@ -269,5 +269,20 @@ TARGET ENTROPY NOW 0.5
 	log: 30_12_synth_fb_remote_2
 	agent: 30_12_trained_agent_learned_reward_learning_local_2.pt (20k epi)
 	wandb: 30_12_synthetic_feedback_remote_2 
+	
+- RLHF synthetic fb, 400 comparisons, pref dataset max size 100, batch32, 20 rounds, 5000 iter, LINEAR -> USE DOT PRODUCT FOR GAB REWARD
+	log: 30_12_synth_fb_remote_3
+	agent: 30_12_trained_agent_learned_reward_learning_local_3.pt (20k epi)
+	wandb: 30_12_synthetic_feedback_remote_3
+	
+	
+31/12
+- RLHF synthetic fb, 400 comparisons, pref dataset max size 100, batch32, 20 rounds, 5000 iter, LINEAR -> CORRECTED TARGET ENTROPY (0.5)
+	log: 31_12_synth_fb_remote_1
+	wandb: 31_12_synthetic_feedback_remote_1
+	
+- Regular agent training with human feedback and target entropy 0.5!!
+	agent: 31_12_trained_agent_human_reward_remote_1.pt (20k epi)
+	log: 31_12_trained_agent_human_reward_remote_1 (20k epi)
 
 

@@ -1,3 +1,7 @@
+"""
+@author: elamrani
+"""
+
 import abc
 import numpy as np
 import pickle
@@ -10,21 +14,21 @@ from single_agent_gym import ReplayDiscreteGymSupervisor as Gym
 
 def create_gym(config):
     #overwrite the action choice method:
-    hexagon = Block([[1,0,0],[1,1,1],[1,1,0],[0,2,1],[0,1,0],[0,1,1]],muc=0.5)
+    hexagon = Block([[1,0,0],[1,1,1],[1,1,0],[0,2,1],[0,1,0],[0,1,1]],muc=0.7)
     target = Block([[0,0,1]])
     gym = Gym(config,
               agent_type=SACSupervisorSparse,
               use_wandb=False,
-              actions= ['Ph'],
+              actions= ['Ph'], # place-hold only necessary action
               block_type=[hexagon],
-              random_targets='random_gap',
-              n_robots=2,
-              max_blocks = 50,
+              random_targets='random_gap', 
+              targets_loc=[[2,0],[6,0]], 
+              n_robots=2, 
+              max_blocks = 15,
               targets=[target]*2,
-              targets_loc = [[2,0],[6,0]],
-              max_interfaces = 50,
+              max_interfaces = 100,
               log_freq = 5,
-              maxs = [9,6])
+              maxs = [15,15]) # grid size
     print(f"gym dtype: {type(gym)}")
     return gym
 
@@ -86,7 +90,7 @@ class LinearRewardNormComparison(RewardComparison):
         reward1 = self.normalize(reward1)
         reward2 = self.normalize(reward2)
         print(f"Normalized reward a: {reward1}")
-        print(f"Normalized reward b: {reward2} \n")
+        print(f"Normalized reward b: {reward2}")
         return np.linalg.norm(reward2-reward1)
     
     def normalize(self, reward):
@@ -99,36 +103,10 @@ class LinearRewardNormComparison(RewardComparison):
             normalized vector
         """
         return (reward-np.mean(reward))/np.linalg.norm(reward)
-
-
-class LinearRewardPolicyComparison(RewardComparison):
-    """Class for comparing rewards."""
-
-    def __init__(self):
-        """
-        Initialize the reward comparison
-        """
-
-    def __call__(
-        self,
-        gym,
-        agent1,
-        agent2
-    ):
-        """Compare the success rate of policies trained by each reward.
-
-        Returns:
-            similarity metric (distance between success rate, e.g. absolute value of difference)
-        """
-        print(f"gym: {gym.agent}")
-        gym = load_agent(agent1,gym,explore=False)
-        avg_return1 = gym.avg_return_agent(nb_trials=100)
-        gym = load_agent(agent2,gym,explore=False)
-        avg_return2 = gym.avg_return_agent(nb_trials=100)
-        return avg_return1, avg_return2
+        # return reward - np.mean(reward)
         
 
-class RewardSuccessComparison(RewardComparison):
+class ReturnPolicy(RewardComparison):
     """Class for comparing rewards."""
 
     def __init__(self):
@@ -139,8 +117,7 @@ class RewardSuccessComparison(RewardComparison):
     def __call__(
         self,
         gym,
-        agent1,
-        agent2
+        agent
     ):
         """Compare the success rate of policies trained by each reward.
 
@@ -148,29 +125,51 @@ class RewardSuccessComparison(RewardComparison):
             similarity metric (distance between success rate, e.g. absolute value of difference)
         """
         print(f"gym: {gym.agent}")
-        gym = load_agent(agent1,gym,explore=False)
-        success_rate1 = gym.evaluate_agent(nb_trials=100)
-        gym = load_agent(agent2,gym,explore=False)
-        success_rate2 = gym.evaluate_agent(nb_trials=100)
-        return success_rate1, success_rate2
+        gym = load_agent(agent,gym,explore=False)
+        avg_return = gym.avg_return_agent(nb_trials=100)
+        return avg_return
+        
+
+class RewardSuccess(RewardComparison):
+    """Class for comparing rewards."""
+
+    def __init__(self):
+        """
+        Initialize the reward comparison
+        """
+
+    def __call__(
+        self,
+        gym,
+        agent
+    ):
+        """Compare the success rate of policies trained by each reward.
+
+        Returns:
+            similarity metric (distance between success rate, e.g. absolute value of difference)
+        """
+        print(f"gym: {gym.agent}")
+        gym = load_agent(agent,gym,explore=False)
+        success_rate = gym.evaluate_agent(nb_trials=100)
+        return success_rate
 
 
 if __name__ == '__main__':
     # Init gym
-    config = {'train_n_episodes':10000,
-            'train_l_buffer':200,
-            'ep_batch_size':32,
+    config = {'train_n_episodes':20000,
+            'train_l_buffer':1000000,
+            'ep_batch_size':512,
             'ep_use_mask':True,
             'agent_discount_f':0.1, # 1-gamma
             'agent_last_only':True,
             'reward': 'modular',
-            'torch_device':'cpu',
-            'SEnc_n_channels':64,
-            'SEnc_n_internal_layer':2,
+            'torch_device': 'cpu',
+            'SEnc_n_channels':64, # 64
+            'SEnc_n_internal_layer':4,
             'SEnc_stride':1,
             'SEnc_order_insensitive':True,
-            'SAC_n_fc_layer':3,
-            'SAC_n_neurons':128,
+            'SAC_n_fc_layer':3, # 3
+            'SAC_n_neurons':64, # 128
             'SAC_batch_norm':True,
             'Q_duel':True,
             'opt_lr':1e-4,
@@ -181,21 +180,19 @@ if __name__ == '__main__':
             'agent_exp_strat':'softmax',
             'agent_epsilon':0.05, # not needed in sac
             'opt_max_norm': 2,
-            'opt_target_entropy':1.8,
+            'opt_target_entropy':0.5,
             'opt_value_clip':False,
             'opt_entropy_penalty':False,
             'opt_Q_reduction': 'min',
             'V_optimistic':False,
-            'reward_failure':-1,
-            # 'reward_action':{'Ph': -0.2, 'L':-0.1},
-            'reward_action':{'Ph': -0.2}, # only action considered
+            'reward_failure':-2,
+            'reward_action':{'Ph': -0.2},
             'reward_closer':0.4,
-            'reward_nsides': 0.1,
-            'reward_success':1,
+            'reward_nsides': 0.05,
+            'reward_success':5,
             'reward_opposite_sides':0,
             'opt_lower_bound_Vt':-2,
-            'gap_range': [2,3] # this way gap of 2
-            # 'gap_range':[2,6]
+            'gap_range':[1,8] # so 1 to 7 actually
             }
     gym = create_gym(config)
 
@@ -204,33 +201,46 @@ if __name__ == '__main__':
     # Norm comparator
     norm_comparator = LinearRewardNormComparison()
     # Rewards to compare
-    synthetic_reward = np.array([-0.2, 0.4, 1, -1, 0.1, 0])
-    learned_reward = np.array([0.033, 1.379, 0.468, -0.281, 0.110, 0.084])
+    gab_reward = np.array([-0.2, 0.4, 5, -2, 0.05, 0])
+    learned_reward_linear = np.array([-0.7607503, 0.8275733, 3.5222988, -2.7163618, -0.09642205, -0.27460566])
+    learned_reward_disagreement = np.array([-0.43, 0.48, 2.25, -2.25, -0.13, -0.08])
     # Comparison
-    distance = norm_comparator(synthetic_reward, learned_reward)
-    print(f"Cosine distance: {distance}")
+    distance = norm_comparator(gab_reward, learned_reward_linear)
+    print(f"Cosine distance gab - linear: {distance} \n")
+    distance = norm_comparator(gab_reward, learned_reward_disagreement)
+    print(f"Cosine distance gab - disagreement: {distance}\n")
 
     
     # SUCCESS COMPARISON
     print("SUCCESS COMPARISON")
     # Norm comparator
-    norm_comparator = RewardSuccessComparison()
+    norm_comparator = RewardSuccess()
     # Agents to compare
-    synthetic_agent = "synth_test.pt"
-    rlhf_agent = "test.pt"
+    gab_agent = "final_trained_agents/gab.pt"
+    rlhf_linear_agent = "final_trained_agents/linear.pt"
+    rlhf_disagreement_agent = "final_trained_agents/disagreement.pt"
+    rlhf_cnn_agent = "final_trained_agents/31_12_cnn_trained_agent.pt"
     # Comparison
-    success_rates = norm_comparator(gym, synthetic_agent, rlhf_agent)
-    print(f"Success rate Gab's: {success_rates[0]} - Success rate RLHF: {success_rates[1]}")
+    success_gab_agent = norm_comparator(gym, gab_agent)
+    success_linear_agent = norm_comparator(gym, rlhf_linear_agent)
+    success_disagreement_agent = norm_comparator(gym, rlhf_disagreement_agent)
+    success_cnn_agent = norm_comparator(gym, rlhf_cnn_agent)
+    print(f"Success rate gab: {success_gab_agent}")
+    print(f"Success rate linear: {success_linear_agent}")
+    print(f"Success rate disagreement: {success_disagreement_agent}")
+    print(f"Success rate cnn: {success_cnn_agent}\n")
 
 
     # POLICY COMPARISON
     print("POLICY COMPARISON")
     # Norm comparator
-    norm_comparator = LinearRewardPolicyComparison()
-    # Agents to compare
-    synthetic_agent = "synth_test.pt"
-    rlhf_agent = "test.pt"
+    norm_comparator = ReturnPolicy()
     # Comparison
-    avg_returns = norm_comparator(gym, synthetic_agent, rlhf_agent)
-    print(f"Using Gab's reward in the environment")
-    print(f"Average return Gab's: {avg_returns[0]} - Average return RLHF {avg_returns[1]}")
+    return_gab_agent = norm_comparator(gym, gab_agent)
+    return_linear_agent = norm_comparator(gym, rlhf_linear_agent)
+    return_disagreement_agent = norm_comparator(gym, rlhf_disagreement_agent)
+    return_cnn_agent = norm_comparator(gym, rlhf_cnn_agent)
+    print(f"Average return gab: {return_gab_agent}")
+    print(f"Average return linear: {return_linear_agent}")
+    print(f"Average return disagreement: {return_disagreement_agent}")
+    print(f"Average return cnn: {return_cnn_agent}")

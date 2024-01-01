@@ -32,12 +32,12 @@ USE_WANDB = True
 
 # Save/wandb options
 SAVE = True
-TRAINED_AGENT = "05_12_trained_agent_gabriel_reward_remote.pt"
-NAME = "05_12_trained_agent_gabriel_reward_remote" # for wandb
+TRAINED_AGENT = "/content/drive/My Drive/31_12_trained_agent_human_reward_remote.pt"
+NAME = "31_12_trained_agent_human_reward_remote" # for wandb
 
 # Other options
-NB_EPISODES = 40000
-REMOTE = False
+NB_EPISODES = 20000
+REMOTE = True
 
 if REMOTE:
     device = 'cuda'
@@ -150,6 +150,16 @@ class ReplayDiscreteGymSupervisor():
 
         # Select device
         self.device = device
+
+        # Coefficients of Gab's reward
+        self.coeff = th.tensor([
+                config['reward_action']['Ph'],
+                config['reward_closer'],
+                config['reward_success'],
+                config['reward_failure'],
+                config['reward_nsides'],
+                config['reward_opposite_sides']
+                ], device=device, dtype=th.float32)
         
     def episode_restart(self,
                           max_steps,
@@ -297,7 +307,7 @@ class ReplayDiscreteGymSupervisor():
                 if self.use_gabriel:
                     reward = self.rewardf(action, valid, closer, success, failure, n_sides=n_sides, config=self.config)
                 else:
-                    reward_gab = self.reward_gab(action, valid, closer, success, failure, n_sides=n_sides, config=self.config)
+                    reward_gab = th.dot(self.coeff, reward_features)
                     rewards_gab_ar[idr,step]=reward_gab
                     if self.use_linear:# leave this one, useful later
                         reward = self.rewardf(reward_features).detach().cpu().numpy() # linear reward
@@ -459,14 +469,14 @@ class ReplayDiscreteGymSupervisor():
                     else:
                         wandb.log({'animation':wandb.Html(anim.to_jshtml())})
 
-        # if rlhf: # if an agent training during rlhf rounds
-        #     _, _, gab_reward = self.generate_trajectories(nb_traj=200)
-        #     # log
-        #     self.logger.info(f'\n --> Average gabriel reward: {gab_reward}')
-        #     reward_dict[f'reward_gabriel_overall']=gab_reward[0]
-        #     for i in np.arange(self.gap_range[0],self.gap_range[1]):
-        #         reward_dict[f'reward_gabriel_gap{i}']=gab_reward[i]
-        #     wandb.log(reward_dict)
+        if rlhf: # if an agent training during rlhf rounds
+            _, _, gab_reward = self.generate_trajectories(nb_traj=200)
+            # log
+            self.logger.info(f'\n --> Average gabriel reward: {gab_reward}')
+            reward_dict[f'reward_gabriel_overall']=gab_reward[0]
+            for i in np.arange(self.gap_range[0],self.gap_range[1]):
+                reward_dict[f'reward_gabriel_gap{i}']=gab_reward[i]
+            wandb.log(reward_dict)
 
         return anim
     
@@ -526,19 +536,16 @@ class ReplayDiscreteGymSupervisor():
     def evaluate_agent(self,
                 nb_trials = 100,
                 draw_freq=100,
-                max_steps=100,
-                success_rate_decay = 0.01
+                max_steps=100
                 ):
         """
         Evaluates agent's current policy.
         """
-        # init success_rate for each possible gap size
+        # init success_rate for each possible gap size, NOTE: first value (idx=0) will actually contain the overall avg!
         if self.random_targets == 'random_gap' or self.random_targets == 'random_gap_center':
             success_rate = np.zeros(self.gap_range[1])
-            success_rate[0]=1
-        else:
-            success_rate = 0 # gap_size 1 => scalar
-
+            gap_counts = np.zeros(self.gap_range[1])
+    
         # init trajectory buffer
         trajectory_buffer = np.empty(shape=nb_trials, dtype=object)
         buffer_count = 0
@@ -546,9 +553,6 @@ class ReplayDiscreteGymSupervisor():
         # Switch to epsilon-greedy policy (exploitation)
         self.agent.exploration_strat = 'epsilon-greedy'
         self.agent.eps = 0
-
-        # start training
-        print("Agent evaluation started")
 
         # run over several episodes
         for episode in range(nb_trials):
@@ -562,81 +566,53 @@ class ReplayDiscreteGymSupervisor():
                                                               auto_leave=True,
                                                               train=False
                                                               )
-            # update success_rate
+            # update success_rate (stationary average)
             if self.random_targets == 'random_gap' or self.random_targets =='random_gap_center':
-                if success:
-                    success_rate[gap] = (1-success_rate_decay)*success_rate[gap] +success_rate_decay
-                else:
-                    success_rate[gap] = (1-success_rate_decay)*success_rate[gap]
-            else:
-                if success:
-                    success_rate = (1-success_rate_decay)*success_rate +success_rate_decay
-                else:
-                    success_rate = (1-success_rate_decay)*success_rate
-        
-        print("Agent evaluation finished")
-        return success_rate[2] # success_rate of gap 2
+                gap_counts[gap] += 1
+                gap_counts[0] += 1 # total count
+                success_rate[gap] = success_rate[gap]*(gap_counts[gap]-1)/(gap_counts[gap]) + success/gap_counts[gap]
+                success_rate[0] = success_rate[0]*(gap_counts[0]-1)/(gap_counts[0]) + success/gap_counts[0]
+
+        return success_rate
 
     def avg_return_agent(self,
                 nb_trials = 100,
                 draw_freq=100,
-                max_steps=100,
-                success_rate_decay = 0.01
+                max_steps=100
                 ):
         """
         Evaluates agent's current policy using average reward return.
         """
-        # init success_rate for each possible gap size
-        if self.random_targets == 'random_gap' or self.random_targets == 'random_gap_center':
-            success_rate = np.zeros(self.gap_range[1])
-            success_rate[0]=1
-            res_dict={}
-        else:
-            success_rate = 0 # gap_size 1 => scalar
+        # init reward for each gap, NOTE: first value (idx=0) will actually contain the overall avg!
+        reward_rate = np.zeros(self.gap_range[1])
+        reward_count = np.zeros(self.gap_range[1])
 
         # init trajectory buffer
         trajectory_buffer = np.empty(shape=nb_trials, dtype=object)
         buffer_count = 0
-
-        # Switch to epsilon-greedy policy (exploitation)
-        self.agent.exploration_strat = 'epsilon-greedy'
-        self.agent.eps = 0
-
-        # start training
-        print("Agent evaluation started")
-
-        # total reward
-        total_reward = 0
 
         # run over several episodes
         for episode in range(nb_trials):
             # run an episode
             (reward_ar, _,
              _, trajectory_buffer, 
-             buffer_count, success, gap) = self.episode_restart(max_steps,
+             buffer_count, _, 
+             gap, _) = self.episode_restart(max_steps,
                                                               draw = episode % draw_freq == 0,#draw_freq-1,
                                                               trajectory_buffer=trajectory_buffer,
                                                               trajectory_buffer_count=buffer_count,
                                                               auto_leave=True,
                                                               train=False
                                                               )
-            # update success_rate
+            reward = np.sum(reward_ar)
+            # update total reward TODO
             if self.random_targets == 'random_gap' or self.random_targets =='random_gap_center':
-                if success:
-                    success_rate[gap] = (1-success_rate_decay)*success_rate[gap] +success_rate_decay
-                else:
-                    success_rate[gap] = (1-success_rate_decay)*success_rate[gap]
-            else:
-                if success:
-                    success_rate = (1-success_rate_decay)*success_rate +success_rate_decay
-                else:
-                    success_rate = (1-success_rate_decay)*success_rate
-        
-            # update total reward
-            total_reward += np.sum(reward_ar)
+                reward_count[gap] += 1
+                reward_count[0] += 1 # total count
+                reward_rate[gap] = reward_rate[gap]*(reward_count[gap]-1)/(reward_count[gap]) + reward/reward_count[gap]
+                reward_rate[0] = reward_rate[0]*(reward_count[0]-1)/(reward_count[0]) + reward/reward_count[0]
 
-        print("Agent evaluation finished")
-        return total_reward/nb_trials
+        return reward_rate
 
     def exploit(self,gap,
                 alterations=None,
@@ -864,17 +840,17 @@ if __name__ == '__main__':
             'agent_exp_strat':'softmax',
             'agent_epsilon':0.05, # not needed in sac
             'opt_max_norm': 2,
-            'opt_target_entropy':1.8,
+            'opt_target_entropy':0.5,
             'opt_value_clip':False,
             'opt_entropy_penalty':False,
             'opt_Q_reduction': 'min',
             'V_optimistic':False,
-            'reward_failure':-2,
-            'reward_action':{'Ph': -0.2},
-            'reward_closer':0.4,
-            'reward_nsides': 0.05,
-            'reward_success':5,
-            'reward_opposite_sides':0,
+            'reward_failure': -3.129127, #-2,
+            'reward_action': {'Ph': 1.0634929}, #{'Ph': -0.2},
+            'reward_closer': 1.4099652, #0.4,
+            'reward_nsides': -0.59654284, #0.05,
+            'reward_success': 3.7210138, #5,
+            'reward_opposite_sides': 1.4293281, #0,
             'opt_lower_bound_Vt':-2,
             'gap_range':[1,8] # so 1 to 7 actually
             }
@@ -912,12 +888,10 @@ if __name__ == '__main__':
         gym.run = run
     anim = gym.training(max_steps = 20, draw_freq = 200, pfreq =10,
                          use_wandb=USE_WANDB, nb_episodes=NB_EPISODES) # draw and print freq
-    #gym.test_gap()
-    #gr.save_anim(anim,os.path.join(".", f"test_graph"),ext='html')
 
-    # if SAVE:
-    #     with open(TRAINED_AGENT, "wb") as input_file:
-    #         pickle.dump(gym.agent,input_file)
+    if SAVE:
+        with open(TRAINED_AGENT, "wb") as input_file:
+            pickle.dump(gym.agent,input_file)
 
     if SAVE:
         th.save(gym.agent, TRAINED_AGENT, pickle_module=pickle)

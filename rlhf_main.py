@@ -1,3 +1,7 @@
+"""
+@author: elamrani
+"""
+
 # IMPORTS
 from discrete_blocks import discrete_block as Block
 from relative_single_agent import SACSupervisorSparse
@@ -19,15 +23,15 @@ from rlhf_preference_comparisons import PreferenceComparisons
 
 
 # CONSTANTS
-USE_WANDB = True
+USE_WANDB = False
 HUMAN_FEEDBACK = True
-LOGGING = True
+LOGGING = False
 REMOTE = False
 SAVE_AGENT = True
 SAVE_REWARD = True
 LOGGING_LVL = "info"
 DISAGREEMENT = False
-SAVE_PREFERENCES = True
+SAVE_PREFERENCES = False
 LINEAR = True # linear or cnn reward
 NB_EPISODES = 20000 # for regular agent training at the end
 
@@ -148,7 +152,7 @@ config = {'train_n_episodes':NB_EPISODES,
             'agent_exp_strat':'softmax',
             'agent_epsilon':0.05, # not needed in sac
             'opt_max_norm': 2,
-            'opt_target_entropy':1.8,
+            'opt_target_entropy':0.5,
             'opt_value_clip':False,
             'opt_entropy_penalty':False,
             'opt_Q_reduction': 'min',
@@ -287,24 +291,24 @@ logger.debug("REWARD TRAINING ENDED \n \n")
 if SAVE_REWARD:
     th.save(reward_model, TRAINED_REWARD, pickle_module=pickle)
 
-# # TRAIN AGENT ON LEARNED REWARD
-# logger.info("\n \n ########################################")
-# logger.info("AGENT TRAINING ON LEARNED REWARD STARTED")
-# logger.info("######################################## \n")
-# if USE_WANDB:
-#     pref_comparisons.gym.use_wandb = USE_WANDB
-# pref_comparisons.gym.training(nb_episodes=NB_EPISODES, use_wandb = USE_WANDB)
-# logger.debug("AGENT TRAINING ON LEARNED REWARD ENDED \n \n")
-# if SAVE_AGENT:
-#     th.save(pref_comparisons.gym.agent, TRAINED_AGENT, pickle_module=pickle)
+# TRAIN AGENT ON LEARNED REWARD
+logger.info("\n \n ########################################")
+logger.info("AGENT TRAINING ON LEARNED REWARD STARTED")
+logger.info("######################################## \n")
+if USE_WANDB:
+    pref_comparisons.gym.use_wandb = USE_WANDB
+pref_comparisons.gym.training(nb_episodes=NB_EPISODES, use_wandb = USE_WANDB)
+logger.debug("AGENT TRAINING ON LEARNED REWARD ENDED \n \n")
+if SAVE_AGENT:
+    th.save(pref_comparisons.gym.agent, TRAINED_AGENT, pickle_module=pickle)
 
-# # EVALUATE AGENT
-# logger.info("\n \n ########################")
-# logger.info("AGENT EVALUATION STARTED")
-# logger.info("######################## \n")
-# success_rate = pref_comparisons.gym.evaluate_agent(nb_trials=1000)
-# logger.info(f"Average success rate: {success_rate} \n \n")
-# logger.debug("AGENT EVALUATION ENDED")
+# EVALUATE AGENT
+logger.info("\n \n ########################")
+logger.info("AGENT EVALUATION STARTED")
+logger.info("######################## \n")
+success_rate = pref_comparisons.gym.evaluate_agent(nb_trials=1000)
+logger.info(f"Average success rate: {success_rate} \n \n")
+logger.debug("AGENT EVALUATION ENDED")
 
 # End wandb
 if USE_WANDB:

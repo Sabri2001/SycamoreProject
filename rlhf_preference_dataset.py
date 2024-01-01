@@ -1,3 +1,7 @@
+"""
+@author: elamrani
+"""
+
 import numpy as np
 import pickle
 from imitation.data.types import AnyPath
