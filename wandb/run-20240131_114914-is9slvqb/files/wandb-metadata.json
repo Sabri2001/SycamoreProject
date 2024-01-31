@@ -1,0 +1,53 @@
+{
+    "os": "Windows-10-10.0.22621-SP0",
+    "python": "3.11.7",
+    "heartbeatAt": "2024-01-31T10:49:16.940501",
+    "startedAt": "2024-01-31T10:49:14.163028",
+    "docker": null,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "c:\\Users\\grvallat\\Documents\\GitHub\\RLHFSabri\\rlhf_main.py",
+    "codePathLocal": "rlhf_main.py",
+    "codePath": "rlhf_main.py",
+    "git": {
+        "remote": "https://github.com/Sabri2001/SycamoreProject.git",
+        "commit": "2833b9fff95101a9981d561f25ac8ea1bcc09f1f"
+    },
+    "email": "vallatga@gmail.com",
+    "root": "C:/Users/grvallat/Documents/GitHub/RLHFSabri",
+    "host": "PC_Cvallat",
+    "username": "grvallat",
+    "executable": "c:\\Users\\grvallat\\Documents\\GitHub\\RLHFSabri\\.conda\\python.exe",
+    "cpu_count": 14,
+    "cpu_count_logical": 20,
+    "cpu_freq": {
+        "current": 1532.0,
+        "min": 0.0,
+        "max": 2500.0
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 1532.0,
+            "min": 0.0,
+            "max": 2500.0
+        }
+    ],
+    "disk": {
+        "/": {
+            "total": 951.0195274353027,
+            "used": 146.63782119750977
+        }
+    },
+    "gpu": "NVIDIA RTX 2000 Ada Generation Laptop GPU",
+    "gpu_count": 1,
+    "gpu_devices": [
+        {
+            "name": "NVIDIA RTX 2000 Ada Generation Laptop GPU",
+            "memory_total": 8585740288
+        }
+    ],
+    "memory": {
+        "total": 31.616294860839844
+    }
+}

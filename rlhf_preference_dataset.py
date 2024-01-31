@@ -4,7 +4,7 @@
 
 import numpy as np
 import pickle
-from imitation.data.types import AnyPath
+#from imitation.data.types import AnyPath
 import torch as th
 import random
 
@@ -65,11 +65,11 @@ class PreferenceDataset():
         assert len(self.traj_list1) == len(self.traj_list2) == len(self.preferences)
         return len(self.traj_list1)
 
-    def save(self, path: AnyPath) -> None:
+    def save(self, path) -> None:
         with open(path, "wb") as file:
             pickle.dump(self, file)
 
-    def load(path: AnyPath) -> "PreferenceDataset":
+    def load(path) -> "PreferenceDataset":
         with open(path, "rb") as file:
             return pickle.load(file)
 
@@ -165,10 +165,10 @@ class PreferenceDatasetNoDiscard():
         return sampled_data_iter
 
     # TODO: check that dumping although some data for other device not issue... (torch.save instead?)
-    def save(self, path: AnyPath):
+    def save(self, path):
         with open(path, "wb") as file:
             pickle.dump(self, file)
 
-    def load(self, path: AnyPath):
+    def load(self, path):
         with open(path, "rb") as file:
             return pickle.load(file)

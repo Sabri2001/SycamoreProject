@@ -6,7 +6,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-
+import wandb
 from rlhf_preference_dataset import PreferenceDataset
 from rlhf_preference_model import PreferenceModel
 
@@ -106,7 +106,7 @@ class LinearRewardTrainerNoTorch(RewardTrainer):
 
 
 class LinearRewardTrainer(RewardTrainer):
-    def __init__(self, preference_model, gamma, learning_rate=0.001, logger=None):
+    def __init__(self, preference_model, gamma, learning_rate=0.0001, logger=None):
         self.preference_model = preference_model
         self.gamma = gamma
         self.logger = logger
@@ -137,15 +137,25 @@ class LinearRewardTrainer(RewardTrainer):
 
         total_loss = 0.
         counter = 0
-        for epoch in range(num_epochs):    
-            for sample in dataset.sample(batch_size=32):
+        for epoch in range(num_epochs):
+            loss_epoch = 0   
+            sample_epoch = 0 
+            for sample in dataset.sample(batch_size=512):
                 trajectory_pair, pref_traj1 = sample
 
                 loss = self.train_step(trajectory_pair, pref_traj1)
                 total_loss += loss
                 counter += 1
+                sample_epoch +=1
+                loss_epoch += loss
+            
 
+                    
             # Print the average loss for this epoch
+            if epoch % 20 == 0:
+                logdict = {f"Reward/coef_{i}": self.preference_model.reward_model.coeff[i] for i in range(self.preference_model.reward_model.coeff.shape[0])}
+                logdict["Reward/loss"]=loss_epoch/sample_epoch
+                wandb.log(logdict)
             if epoch % 50 == 0:
                 average_loss = total_loss / counter
                 self.logger.info(f"Epoch [{epoch + 1}/{num_epochs}] Loss: {average_loss:.4f}")

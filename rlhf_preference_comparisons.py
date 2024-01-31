@@ -11,7 +11,7 @@ import numpy as np
 from stable_baselines3.common import type_aliases
 from imitation.util import util
 
-from rlhf_reward_model import RewardNet
+from rlhf_reward_model import RewardModel
 from rlhf_preference_dataset import PreferenceDataset, PreferenceDatasetNoDiscard
 from rlhf_reward_trainer import RewardTrainer
 from rlhf_preference_gatherer import PreferenceGatherer
@@ -31,7 +31,7 @@ class PreferenceComparisons():
     def __init__(
         self,
         gym,
-        reward_model: RewardNet,
+        reward_model: RewardModel,
         num_iterations: int,
         pair_generator: Optional[PairGenerator] = None,
         preference_gatherer: Optional[PreferenceGatherer] = None,

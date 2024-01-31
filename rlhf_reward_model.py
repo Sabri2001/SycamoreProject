@@ -98,7 +98,8 @@ class RewardLinear(nn.Module):
         return reward
 
     def reward_transition(self, transition):
-        return torch.dot(self.coeff, transition.reward_features)
+        normed_features = transition.reward_features/torch.pow(torch.sum(torch.pow(transition.reward_features,2)),0.5)
+        return torch.dot(self.coeff, normed_features)
 
     def reward_array_features(self, reward_array):
         return torch.dot(self.coeff, reward_array)

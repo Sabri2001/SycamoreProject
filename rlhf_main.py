@@ -23,8 +23,8 @@ from rlhf_preference_comparisons import PreferenceComparisons
 
 
 # CONSTANTS
-USE_WANDB = False
-HUMAN_FEEDBACK = True
+USE_WANDB = True
+HUMAN_FEEDBACK = False
 LOGGING = False
 REMOTE = False
 SAVE_AGENT = True
@@ -38,11 +38,11 @@ NB_EPISODES = 20000 # for regular agent training at the end
 if USE_WANDB:
     LOGGING = True
 
-if REMOTE:
+""" if REMOTE:
     device = 'cuda'
 else:
-    device = 'cpu'
-
+    device = 'cpu' """
+device = 'cuda'
 # Set up logger
 class CustomFileHandler(logging.FileHandler):
     def __init__(self, filename, mode='a', encoding=None, delay=False):
@@ -168,8 +168,8 @@ config = {'train_n_episodes':NB_EPISODES,
             }# Set up wandb
 
 if USE_WANDB:
-    wandb_project = "sycamore"
-    wandb_entity = "sabri-elamrani"
+    wandb_project = "RLHF"
+    wandb_entity = "flask"
     run = wandb.init(project=wandb_project, entity=wandb_entity, name=filename[4:-4] ,config=config)
     # config = wandb.config
 
@@ -207,7 +207,7 @@ gym = ReplayDiscreteGymSupervisor(config,
             reward_fun = reward_model.reward_array_features,
             use_gabriel=False,
             use_linear = LINEAR,
-            device=device
+            device='cuda'
             )
 
 if USE_WANDB:
@@ -268,14 +268,14 @@ pref_comparisons = PreferenceComparisons(
     reward_trainer=reward_trainer,
     transition_oversampling= over_sampling,
     initial_comparison_frac=0.1,
-    initial_epoch_multiplier=4,
+    initial_epoch_multiplier=1,
     query_schedule="hyperbolic",
     draw_freq=draw_freq,
     use_wandb=USE_WANDB,
     logger = logger,
     comparison_queue_size=100,
     dataset_path=PREF_DATASET_PATH,
-    device = device,
+    device = 'cuda',
     human_fb = HUMAN_FEEDBACK
 )
 

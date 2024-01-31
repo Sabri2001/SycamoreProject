@@ -1,0 +1,142 @@
+wandb_version: 1
+
+train_n_episodes:
+  desc: null
+  value: 20000
+train_l_buffer:
+  desc: null
+  value: 1000000
+ep_batch_size:
+  desc: null
+  value: 512
+ep_use_mask:
+  desc: null
+  value: true
+agent_discount_f:
+  desc: null
+  value: 0.1
+agent_last_only:
+  desc: null
+  value: true
+reward:
+  desc: null
+  value: modular
+torch_device:
+  desc: null
+  value: cuda
+SEnc_n_channels:
+  desc: null
+  value: 64
+SEnc_n_internal_layer:
+  desc: null
+  value: 4
+SEnc_stride:
+  desc: null
+  value: 1
+SEnc_order_insensitive:
+  desc: null
+  value: true
+SAC_n_fc_layer:
+  desc: null
+  value: 3
+SAC_n_neurons:
+  desc: null
+  value: 64
+SAC_batch_norm:
+  desc: null
+  value: true
+Q_duel:
+  desc: null
+  value: true
+opt_lr:
+  desc: null
+  value: 0.0001
+opt_pol_over_val:
+  desc: null
+  value: 1
+opt_tau:
+  desc: null
+  value: 0.0005
+opt_weight_decay:
+  desc: null
+  value: 0.0001
+opt_exploration_factor:
+  desc: null
+  value: 0.001
+agent_exp_strat:
+  desc: null
+  value: softmax
+agent_epsilon:
+  desc: null
+  value: 0.05
+opt_max_norm:
+  desc: null
+  value: 2
+opt_target_entropy:
+  desc: null
+  value: 0.5
+opt_value_clip:
+  desc: null
+  value: false
+opt_entropy_penalty:
+  desc: null
+  value: false
+opt_Q_reduction:
+  desc: null
+  value: min
+V_optimistic:
+  desc: null
+  value: false
+reward_failure:
+  desc: null
+  value: -2
+reward_action:
+  desc: null
+  value:
+    Ph: -0.2
+reward_closer:
+  desc: null
+  value: 0.4
+reward_nsides:
+  desc: null
+  value: 0.05
+reward_success:
+  desc: null
+  value: 5
+reward_opposite_sides:
+  desc: null
+  value: 0
+opt_lower_bound_Vt:
+  desc: null
+  value: -2
+gap_range:
+  desc: null
+  value:
+  - 1
+  - 8
+_wandb:
+  desc: null
+  value:
+    python_version: 3.11.7
+    cli_version: 0.16.2
+    framework: torch
+    is_jupyter_run: false
+    is_kaggle_kernel: false
+    start_time: 1706705926.20083
+    t:
+      1:
+      - 1
+      - 55
+      2:
+      - 1
+      - 55
+      3:
+      - 13
+      - 16
+      - 23
+      4: 3.11.7
+      5: 0.16.2
+      8:
+      - 3
+      - 5
+      13: windows-amd64
